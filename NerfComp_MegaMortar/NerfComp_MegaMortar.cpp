@@ -72,10 +72,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define VOLTAGE_MIN         0.0
 #define VOLTAGE_MAX         15.0
 
-#define PIN_MAGTYPE_BIT0       A0
-#define PIN_MAGTYPE_BIT1       A1
-#define PIN_MAGTYPE_BIT2       A2
-#define PIN_MAGTYPE_BIT3       A3
 
 #define MAGTYPE_EMPTY        0
 #define MAGTYPE_UNKNOWN      16
@@ -109,8 +105,6 @@ unsigned long heartbeatPrintTime = 0;
 // create servo object to control the flywheel ESC
 Servo servoESC;
 
-
-Adafruit_MCP23008 mcp;
 
 
 
@@ -219,12 +213,6 @@ void setup() {
   pinMode(PIN_BARREL_END, INPUT);
   attachInterrupt(digitalPinToInterrupt(PIN_BARREL_END), irqBarrelEnd, RISING);
 
-  // Setup the pins for magazine type sensors and jam door sensor
-  pinMode(PIN_MAGTYPE_BIT0, INPUT);
-  pinMode(PIN_MAGTYPE_BIT1, INPUT);
-  pinMode(PIN_MAGTYPE_BIT2, INPUT);
-  pinMode(PIN_MAGTYPE_BIT3, INPUT);
-
   pinMode(PIN_BELT_DOOR, INPUT_PULLUP);
   pinMode(PIN_JAMDOOR, INPUT_PULLUP);
 
@@ -236,16 +224,6 @@ void setup() {
   // init the servo
   servoESC.attach(PIN_PUMP_ESC); // attaches the servo on pin 9 to the servo object
   servoESC.write(PUMP_ESC_NEUTRAL);
-
-  mcp.begin(0);      // use default address 0
-  mcp.pinMode(1, INPUT);
-  mcp.pullUp(1, HIGH);  // turn on a 100K pullup internally
-  mcp.pinMode(2, INPUT);
-  mcp.pullUp(2, HIGH);  // turn on a 100K pullup internally
-  mcp.pinMode(3, INPUT);
-  mcp.pullUp(3, HIGH);  // turn on a 100K pullup internally
-  mcp.pinMode(4, INPUT);
-  mcp.pullUp(4, HIGH);  // turn on a 100K pullup internally
 
   Serial.begin(115200);
   Serial.println(" NerfComp: MegaMortar ver 0.1");
@@ -406,14 +384,6 @@ void loop() {
 
 
   servoESC.write(ESCPos);
-
-  if (p) {
-    Serial.print(" gpio=");
-    Serial.print(mcp.digitalRead(1));
-    Serial.print(mcp.digitalRead(2));
-    Serial.print(mcp.digitalRead(3));
-    Serial.print(mcp.digitalRead(4));
-  }
 
   if (p) {Serial.println("");}
 

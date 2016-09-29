@@ -55,6 +55,11 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define VOLTAGE_MIN         0.0
 #define VOLTAGE_MAX         15.0
 
+#define PIN_MAGTYPE_BIT0       1
+#define PIN_MAGTYPE_BIT1       2
+#define PIN_MAGTYPE_BIT2       3
+#define PIN_MAGTYPE_BIT3       4
+
 #define MAGTYPE_EMPTY     0
 #define MAGTYPE_CLIP_6    1
 #define MAGTYPE_CLIP_10   4
@@ -116,9 +121,9 @@ unsigned long heartbeatPrintTime = 0;
 
 // create a servo object to control the flywheel ESC
 Servo ESCServo;
-Adafruit_MCP23008 magTypePortExpander;
 
-boolean magTypeRead0() { return magTypePortExpander.digitalRead(0); }
+//GPIO Port expander fr mag type
+Adafruit_MCP23008 magGPIO;
 
 // forward function declatations
 void displayUpdate(void);
@@ -137,10 +142,10 @@ boolean magazineSwitchRead() { return !digitalRead(PIN_MAGSWITCH); }
 boolean jamDoorRead() { return digitalRead(PIN_JAMDOOR); }
 
 // magazine bits
-boolean magBit0Read() { return !magTypePortExpander.digitalRead(0); }
-boolean magBit1Read() { return !magTypePortExpander.digitalRead(1); }
-boolean magBit2Read() { return !magTypePortExpander.digitalRead(2); }
-boolean magBit3Read() { return !magTypePortExpander.digitalRead(3); }
+uint8_t magBitsRead() {
+  uint8_t bits = !magGPIO.readGPIO();
+  return ((!bits) >> 1) & 0x0f;
+}
 
 // UI buttons
 boolean buttonUpRead() { return !digitalRead(PIN_BUTTON_UP); }
@@ -203,10 +208,7 @@ void irqBarrelEnd() {
 uint8_t magTypeRead() {
   uint8_t magType = 0;
   if (magazineSwitchRead()) {
-    if (magBit0Read()) {magType |= 1;}
-    if (magBit1Read()) {magType |= 2;}
-    if (magBit2Read()) {magType |= 4;}
-    if (magBit3Read()) {magType |= 8;}
+    magType = magBitsRead();
     // debug code until the sensor board is finished
     magType = MAGTYPE_CLIP_6;
   }
@@ -275,8 +277,15 @@ void setup() {
   ESCServo.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);
 
   // init the port expanders for mag type and HUD buttons
-  magTypePortExpander.begin(0);
-  magTypePortExpander.pinMode(0, INPUT);
+  magGPIO.begin(0);      // use default address 0
+  magGPIO.pinMode(1, INPUT);
+  magGPIO.pullUp(1, HIGH);  // turn on a 100K pullup internally
+  magGPIO.pinMode(2, INPUT);
+  magGPIO.pullUp(2, HIGH);  // turn on a 100K pullup internally
+  magGPIO.pinMode(3, INPUT);
+  magGPIO.pullUp(3, HIGH);  // turn on a 100K pullup internally
+  magGPIO.pinMode(4, INPUT);
+  magGPIO.pullUp(4, HIGH);  // turn on a 100K pullup internally
 
 
   // init the serial port for debugging output
@@ -314,6 +323,7 @@ void debugPrint(volatile boolean* valPtr, char* text) {
         *valPtr = false;
     }
 }
+
 
 void loop() {
   static uint8_t magazineTypeCounter;
@@ -496,6 +506,15 @@ void loop() {
   }
   ESCServo.write(ESCPos);
 
+  if (p) {
+    uint8_t bits = magBitsRead();
+    Serial.print(" mag=");
+    Serial.print(bitRead(bits, 0));
+    Serial.print(bitRead(bits, 1));
+    Serial.print(bitRead(bits, 2));
+    Serial.print(bitRead(bits, 3));
+  }
+
   if (p) {Serial.println(F(""));}
 
   if (((millis() > (displayUpdateTime + DISPLAY_UPDATE_PERIOD))
@@ -532,10 +551,11 @@ void displayScreenDiag() {
   display.print("Jam:"); printBit(jamDoorRead()); display.print(" ");
   display.print("Mag:"); printBit(magazineSwitchRead()); display.println("");
   display.print("MagBits:");
-    printBit(magBit3Read());
-    printBit(magBit2Read());
-    printBit(magBit1Read());
-    printBit(magBit0Read());
+    uint8_t bits = magBitsRead();
+    printBit(bitRead(bits, 0));
+    printBit(bitRead(bits, 1));
+    printBit(bitRead(bits, 2));
+    printBit(bitRead(bits, 3));
     display.print("=");
     display.println(magazineTypePtr->name);
   display.print("barrel:"); printBit(barrelRead()); display.println("");
@@ -547,86 +567,54 @@ void displayScreenDiag() {
 #define POSY_SEVEN_SEG_DIGIT  12
 
 void displayScreenHUD() {
-  //TODO remove this state
-//  static const MagazineType* magazineTypePtrOld = &magazineTypes[MAGTYPE_EMPTY];
-//  static uint8_t roundCountOld = 0;
-//  static uint16_t roundsPerMinOld = 0;
-//  static uint8_t roundsJamCountOld = 0;
-//  static float velocityOld = 0.0;
-//  static float voltageMotorOld = 0;
-//  static boolean jamDoorOpenOld = false;
-//
-//  // update the state of the variables and sensors to display
-//  if ((magazineTypePtr != magazineTypePtrOld)
-//      || (roundCount != roundCountOld)
-//      || (roundsPerMin != roundsPerMinOld)
-//      || (roundsJamCount != roundsJamCountOld)
-//      || (velocity != velocityOld)
-//      || (voltageMotorAvg != voltageMotorOld)
-//      || (jamDoorOpen != jamDoorOpenOld)) {
-//
-//    magazineTypePtrOld = magazineTypePtr;
-//    roundCountOld = roundCount;
-//    roundsPerMinOld = roundsPerMin;
-//    roundsJamCountOld = roundsJamCount;
-//    velocityOld = velocity;
-//    voltageMotorOld = voltageMotorAvg;
-//    jamDoorOpenOld = jamDoorOpen;
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.setTextSize(2);
+  display.println("Stryfe");
+  display.setTextSize(1);
+  display.print("Mag:");
+  display.println(magazineTypePtr->name);
+  display.print("Rd/m:");
+  if (roundsPerMin > 0) {
+    display.println(roundsPerMin, DEC);
+  } else {
+    display.println("---");
 
+  }
+  display.print("Ft/s:");
+  if (velocity >= 0.0) {
+    display.println(velocity, 1);
+  } else {
+    display.println("---");
+  }
+  display.print("Volt:");
+  display.println(voltageBatteryAvg, 1);
+  if (jamDoorOpen) {
+    // draw the jam text inverted if the door is open
+    display.setTextColor(BLACK, WHITE); // 'inverted' text
+  }
+  display.print("Jam:");
+  display.println(roundsJamCount, DEC);
+  display.setTextColor(WHITE);
 
-    // Some data has changed.  Update the display
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-    display.setTextSize(2);
-    display.println("Stryfe");
-    display.setTextSize(1);
-    display.print("Mag:");
-    display.println(magazineTypePtr->name);
-    display.print("Rd/m:");
-    if (roundsPerMin > 0) {
-      display.println(roundsPerMin, DEC);
-    } else {
-      display.println("---");
+  // draw the round digits.
+  int digit0 = SEVEN_SEGMENT_BITMAP_DASH;
+  int digit1 = SEVEN_SEGMENT_BITMAP_DASH;
+  if ((roundCount >= 0) && (roundCount <= 99)) {
+    digit0 = roundCount / 10;
+    digit1 = roundCount % 10;
+  }
+  display.setCursor(86, 0);
+  display.println("Rounds:");
+  display.drawBitmap(POSX_SEVEN_SEG_DIGIT_0, POSY_SEVEN_SEG_DIGIT,
+      (uint8_t *) &(SevenSegmentBitMaps[digit0]),
+      SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
+  display.drawBitmap(POSX_SEVEN_SEG_DIGIT_1, POSY_SEVEN_SEG_DIGIT,
+      (uint8_t *) &(SevenSegmentBitMaps[digit1]),
+      SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
 
-    }
-    display.print("Ft/s:");
-    if (velocity >= 0.0) {
-      display.println(velocity, 1);
-    } else {
-      display.println("---");
-    }
-    display.print("Volt:");
-    display.println(voltageBatteryAvg, 1);
-    if (jamDoorOpen) {
-      // draw the jam text inverted if the door is open
-      display.setTextColor(BLACK, WHITE); // 'inverted' text
-    }
-    display.print("Jam:");
-    display.println(roundsJamCount, DEC);
-    display.setTextColor(WHITE);
-
-    // draw the round digits.
-    int digit0 = SEVEN_SEGMENT_BITMAP_DASH;
-    int digit1 = SEVEN_SEGMENT_BITMAP_DASH;
-    if ((roundCount >= 0) && (roundCount <= 99)) {
-      digit0 = roundCount / 10;
-      digit1 = roundCount % 10;
-    }
-    display.setCursor(86, 0);
-    display.println("Rounds:");
-    display.drawBitmap(POSX_SEVEN_SEG_DIGIT_0, POSY_SEVEN_SEG_DIGIT,
-        (uint8_t *) &(SevenSegmentBitMaps[digit0]),
-        SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
-    display.drawBitmap(POSX_SEVEN_SEG_DIGIT_1, POSY_SEVEN_SEG_DIGIT,
-        (uint8_t *) &(SevenSegmentBitMaps[digit1]),
-        SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
-
-    // draw dividing lines
-    //display.drawLine(POSX_SEVEN_SEG_DIGIT_0 - 3, 0, POSX_SEVEN_SEG_DIGIT_0 - 3, display.height() - 1, WHITE);
-
-    display.display();
-  //}
+  display.display();
 }
 
 void displayUpdate() {
