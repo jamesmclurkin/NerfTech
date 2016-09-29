@@ -6,9 +6,10 @@
 #include <Wire.h>
 #include "libraries\Adafruit_GFX.h"
 #include "libraries\Adafruit_SSD1306.h"
-#include "libraries\Adafruit_MCP23008.h"
 #include <Servo.h>
 #include <avr/pgmspace.h>
+
+////////////////////////////////////////////////////////////////////////////////
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -18,15 +19,17 @@ Adafruit_SSD1306 display(OLED_RESET);
 
 #define PIN_BARREL_START            2
 #define PIN_BARREL_END              3
-#define PIN_MAGSWITCH               4
-#define PIN_PUMPTRIGGER              5
+#define PIN_BELT_DOOR               4
 #define PIN_JAMDOOR                 6
 #define PIN_TRIGGER                 12
-#define PIN_PLUNGER_END             10
 #define PIN_VOLTAGE_BATTERY         A7
+
 #define PIN_DRIVE_MOTOR_FWD         7
 #define PIN_DRIVE_MOTOR_REV         8
 #define PIN_DRIVE_MOTOR_PWM         11
+
+#define PIN_VALVE_BARREL            5
+#define PIN_VALVE_EXHAUST           10
 
 #define VOLTAGE_BATTERY_SCALER      (1/65.8)
 #define VOLTAGE_BATTERY_IIR_GAIN    0.01
@@ -36,14 +39,15 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define MOTOR_DIR_BRAKE             2
 #define MOTOR_DIR_OFF               3
 
-#define PIN_PUMP_ESC      9
+#define VALVE_OFF                   0
+#define VALVE_BARREL_ON                1
+#define VALVE_EXHAUST_ON               2
+
+#define PIN_PUMP_ESC                  9
 
 #define ROUND_STATE_IDLE              0
-#define ROUND_STATE_VALVE_OPEN    1
-#define ROUND_STATE_CLEAR_END_SWITCH  2
-#define ROUND_STATE_RUN_PLUNGER       3
-#define ROUND_STATE_ROUND_DELAY       4
-#define ROUND_STATE_WAIT_FOR_TRIGGGER_RELEASE 5
+#define ROUND_STATE_VALVE_OPEN        1
+#define ROUND_STATE_VALVE_WAIT        2
 
 #define PLUNGER_PWM_RUN_SPEED           145
 #define PLUNGER_PWM_MAX                 255
@@ -51,11 +55,11 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define TRIGGER_DELAY_TIME              100
 #define ROUND_DELAY_TIME                100
 
-#define PUMP_ESC_NEUTRAL      90
-#define PUMP_MOTOR_ESC_PRE_RUN_FULL 96
-#define PUMP_MOTOR_ESC_REVUP        160
-#define PUMP_MOTOR_ESC_RUN          140
-#define PUMP_MOTOR_ESC_BRAKE        15
+#define PUMP_ESC_NEUTRAL              90
+#define PUMP_MOTOR_ESC_PRE_RUN_FULL   96
+#define PUMP_MOTOR_ESC_REVUP          160
+#define PUMP_MOTOR_ESC_RUN            140
+#define PUMP_MOTOR_ESC_BRAKE          15
 
 #define VELOCITY_FPS_MIN                20.0
 #define VELOCITY_FPS_MAX                400.0
@@ -63,7 +67,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define BARREL_LENGTH_INCHES            4.6063
 
 #define HEARTBEAT_UPDATE_PERIOD         50
-#define HEARTBEAT_PRINT_PERIOD          250
+#define HEARTBEAT_PRINT_PERIOD          500
 
 #define VOLTAGE_MIN         0.0
 #define VOLTAGE_MAX         15.0
@@ -104,18 +108,17 @@ unsigned long heartbeatPrintTime = 0;
 
 // create servo object to control the flywheel ESC
 Servo servoESC;
-Adafruit_MCP23008 magIO;
 
 
-boolean magazineSwitchRead() { return magIO.digitalRead(0); }
+Adafruit_MCP23008 mcp;
 
-boolean revTriggerRead() { return !digitalRead(PIN_PUMPTRIGGER); }
+
+
+boolean beltDoorRead() { return !digitalRead(PIN_BELT_DOOR); }
 
 boolean jamDoorRead() { return !digitalRead(PIN_JAMDOOR); }
 
 boolean triggerRead() { return !digitalRead(PIN_TRIGGER); }
-
-boolean plungerEndRead() { return !digitalRead(PIN_PLUNGER_END); }
 
 
 #define BARREL_START    0
@@ -176,6 +179,31 @@ void plungerMotorInit(void) {
   driveMotorPWM(MOTOR_DIR_OFF, 0);
 }
 
+#define VALVE_OFF                   0
+#define VALVE_BARREL_ON                1
+#define VALVE_EXHAUST_ON               2
+
+
+void valveSet(int valveSetting) {
+  int in1, in2;
+
+  switch (valveSetting) {
+  case VALVE_BARREL_ON: {in1 = HIGH; in2 = LOW;} break;
+  case VALVE_EXHAUST_ON: {in1 = LOW; in2 = HIGH;} break;
+  case VALVE_OFF: default: {in1 = LOW; in2 = LOW; } break;
+  }
+
+  digitalWrite(PIN_VALVE_BARREL, in1);
+  digitalWrite(PIN_VALVE_EXHAUST, in2);
+}
+
+
+void valveInit(void) {
+  pinMode(PIN_VALVE_BARREL, OUTPUT);
+  pinMode(PIN_VALVE_EXHAUST, OUTPUT);
+  valveSet(VALVE_OFF);
+}
+
 
 int freeRam () {
   extern int __heap_start, *__brkval;
@@ -197,22 +225,27 @@ void setup() {
   pinMode(PIN_MAGTYPE_BIT2, INPUT);
   pinMode(PIN_MAGTYPE_BIT3, INPUT);
 
-  pinMode(PIN_MAGSWITCH, INPUT_PULLUP);
-  pinMode(PIN_PUMPTRIGGER, INPUT_PULLUP);
+  pinMode(PIN_BELT_DOOR, INPUT_PULLUP);
   pinMode(PIN_JAMDOOR, INPUT_PULLUP);
 
   pinMode(PIN_TRIGGER, INPUT_PULLUP);
-  pinMode(PIN_PLUNGER_END, INPUT_PULLUP);
 
   plungerMotorInit();
+  valveInit();
 
   // init the servo
   servoESC.attach(PIN_PUMP_ESC); // attaches the servo on pin 9 to the servo object
   servoESC.write(PUMP_ESC_NEUTRAL);
 
-
-  magIO.begin(0);
-  magIO.pinMode(0, INPUT);
+  mcp.begin(0);      // use default address 0
+  mcp.pinMode(1, INPUT);
+  mcp.pullUp(1, HIGH);  // turn on a 100K pullup internally
+  mcp.pinMode(2, INPUT);
+  mcp.pullUp(2, HIGH);  // turn on a 100K pullup internally
+  mcp.pinMode(3, INPUT);
+  mcp.pullUp(3, HIGH);  // turn on a 100K pullup internally
+  mcp.pinMode(4, INPUT);
+  mcp.pullUp(4, HIGH);  // turn on a 100K pullup internally
 
   Serial.begin(115200);
   Serial.println(" NerfComp: MegaMortar ver 0.1");
@@ -247,8 +280,6 @@ unsigned long displayUpdateTime = 0;
 boolean sp = true;
 
 void loop() {
-  static int magazineTypeCounter;
-  static boolean magazineNew = false;
   static unsigned long roundTimePrev = 0;
 
   boolean displayUpdateEnable = true;
@@ -310,28 +341,29 @@ void loop() {
       heartbeatPrintTime += HEARTBEAT_PRINT_PERIOD;
       p = true;
     }
-    p = false;
+    //p = false;
     if (p) {Serial.print("hb ");}
     if (p) {Serial.print("  rounds="); Serial.print(roundCount, DEC); }
 
 
     // update the motor voltage
-    int voltageMotorRaw = analogRead(PIN_VOLTAGE_BATTERY);
-    float voltageMotorTemp = (float) voltageMotorRaw * VOLTAGE_BATTERY_SCALER;
+    int voltageBatteryRaw = analogRead(PIN_VOLTAGE_BATTERY);
+    float voltageBatteryTemp = (float) voltageBatteryRaw * VOLTAGE_BATTERY_SCALER;
 
-    if (p) {Serial.print("  vmot="); Serial.print(voltageMotorRaw, DEC); }
-    if (p) {Serial.print(","); Serial.print(voltageMotorTemp, 2); }
+    if (p) {Serial.print("  vbat="); Serial.print(voltageBatteryAvg, DEC); }
+    if (p) {Serial.print(","); Serial.print(voltageBatteryTemp, 2); }
     // add some sanity checks to the voltage
-    if ((voltageMotorTemp >= VOLTAGE_MIN) && (voltageMotorTemp <= VOLTAGE_MAX)) {
+    if ((voltageBatteryTemp >= VOLTAGE_MIN) && (voltageBatteryTemp <= VOLTAGE_MAX)) {
       // compute a IIR low-pass filter
-      voltageBatteryAvg = VOLTAGE_BATTERY_IIR_GAIN * voltageMotorTemp + (1 - VOLTAGE_BATTERY_IIR_GAIN) * voltageBattery;
-      voltageBattery = voltageMotorTemp;
+      voltageBatteryAvg = VOLTAGE_BATTERY_IIR_GAIN * voltageBatteryTemp + (1 - VOLTAGE_BATTERY_IIR_GAIN) * voltageBattery;
+      voltageBattery = voltageBatteryTemp;
     }
   }
 
 
+  // use the belt door switch to trigger the pump for now
   int ESCPos = PUMP_ESC_NEUTRAL;
-  if (revTriggerRead()) {
+  if (beltDoorRead()) {
     ESCPos = PUMP_MOTOR_ESC_RUN;
   } else {
     ESCPos = PUMP_MOTOR_ESC_BRAKE;
@@ -342,8 +374,10 @@ void loop() {
     if (sp) {Serial.println(""); Serial.println(" s:idle"); sp = false; }
     driveMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
     // close the valve
+    valveSet(VALVE_OFF);
     if (triggerRead() && STATE_DELAY(TRIGGER_DELAY_TIME)) {
       // fire a round.  open the valve
+      valveSet(VALVE_BARREL_ON);
       SET_ROUND_STATE(ROUND_STATE_VALVE_OPEN);
     }
     break;
@@ -352,8 +386,18 @@ void loop() {
     if (sp) {Serial.println(" s:valve_open"); sp = false;}
     driveMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
     displayUpdateEnable = false;
-    unsigned long valveTime = 200;
+    unsigned long valveTime = 20;
     if (STATE_DELAY(valveTime)) {
+      valveSet(VALVE_OFF);
+      SET_ROUND_STATE(ROUND_STATE_VALVE_WAIT);
+    }
+    break;
+  }
+  case ROUND_STATE_VALVE_WAIT: {
+    if (sp) {Serial.println(" s:valve_wait"); sp = false;}
+    driveMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
+    valveSet(VALVE_OFF);
+    if (!triggerRead()) {
       SET_ROUND_STATE(ROUND_STATE_IDLE);
     }
     break;
@@ -362,6 +406,14 @@ void loop() {
 
 
   servoESC.write(ESCPos);
+
+  if (p) {
+    Serial.print(" gpio=");
+    Serial.print(mcp.digitalRead(1));
+    Serial.print(mcp.digitalRead(2));
+    Serial.print(mcp.digitalRead(3));
+    Serial.print(mcp.digitalRead(4));
+  }
 
   if (p) {Serial.println("");}
 
@@ -394,8 +446,7 @@ void displayUpdate() {
 
   display.setTextColor(WHITE);
   display.print("Volt:"); display.println(voltageBatteryAvg, 1);
-  display.print("SW Rev:"); printBit(revTriggerRead()); display.print(" ");
-  display.print("Jam:"); printBit(jamDoorRead()); display.print(" ");
-  display.print("Mag:"); printBit(magazineSwitchRead()); display.println("");
+  display.print("Jam:"); printBit(jamDoorRead()); display.println(" ");
   display.display();
 }
+

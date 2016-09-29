@@ -6,8 +6,11 @@
 #include <Wire.h>
 #include "libraries\Adafruit_GFX.h"
 #include "libraries\Adafruit_SSD1306.h"
+#include "libraries\Adafruit_MCP23008.h"
 #include <Servo.h>
 #include <avr/pgmspace.h>
+
+////////////////////////////////////////////////////////////////////////////////
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -63,11 +66,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define MAGTYPE_DRUM_35   12
 #define MAGTYPE_UNKNOWN   16
 
-#define PIN_MAGTYPE_BIT0       A0
-#define PIN_MAGTYPE_BIT1       A1
-#define PIN_MAGTYPE_BIT2       A2
-#define PIN_MAGTYPE_BIT3       A3
-
 #define MAGAZINE_TYPE_DELAY   3
 
 typedef struct MagazineType {
@@ -118,7 +116,9 @@ unsigned long heartbeatPrintTime = 0;
 
 // create a servo object to control the flywheel ESC
 Servo ESCServo;
+Adafruit_MCP23008 magTypePortExpander;
 
+boolean magTypeRead0() { return magTypePortExpander.digitalRead(0); }
 
 // forward function declatations
 void displayUpdate(void);
@@ -137,10 +137,10 @@ boolean magazineSwitchRead() { return !digitalRead(PIN_MAGSWITCH); }
 boolean jamDoorRead() { return digitalRead(PIN_JAMDOOR); }
 
 // magazine bits
-boolean magBit0Read() { return !digitalRead(PIN_MAGTYPE_BIT0); }
-boolean magBit1Read() { return !digitalRead(PIN_MAGTYPE_BIT1); }
-boolean magBit2Read() { return !digitalRead(PIN_MAGTYPE_BIT2); }
-boolean magBit3Read() { return !digitalRead(PIN_MAGTYPE_BIT3); }
+boolean magBit0Read() { return !magTypePortExpander.digitalRead(0); }
+boolean magBit1Read() { return !magTypePortExpander.digitalRead(1); }
+boolean magBit2Read() { return !magTypePortExpander.digitalRead(2); }
+boolean magBit3Read() { return !magTypePortExpander.digitalRead(3); }
 
 // UI buttons
 boolean buttonUpRead() { return !digitalRead(PIN_BUTTON_UP); }
@@ -165,51 +165,9 @@ MagazineType* magazineTypeLookup(int magTypeVal) {
   return (MagazineType*)tempPtr;
 }
 
-//#define GLITCH_CHECKS 4
-//
-//boolean glitchReject(uint8_t pin, int level) {
-//  boolean returnVal = true;
-//  volatile uint8_t i;
-//
-//  for (i = 0; i < GLITCH_CHECKS; i++) {
-//    if (digitalRead(pin) != level) {
-//      // Pin is not at the desired level.  this was a glitch.  return false.
-//      returnVal = false;
-//      break;
-//    } else {
-//      // want ~500ns delay here, around 10 clock ticks
-//      i++;
-//      i--;
-//      i++;
-//      i--;
-//    }
-//  }
-//  return returnVal;
-//}
-//
-//void irqBarrelStart() {
-//  // the dart crossed the first (chamber) barrel sensor
-//  debug_barrelStart = true;
-//  if (glitchReject(PIN_BARREL_START, HIGH)) {
-//    // good signal.  note the start time
-//    timeBarrelStart = micros();
-//    debug_barrelStart_glitch = true;
-//  }
-//}
-//
-//void irqBarrelEnd() {
-//  // the dart crossed the last (muzzle) barrel sensor
-//  debug_barrelEnd = true;
-//  if (glitchReject(PIN_BARREL_END, LOW)) {
-//    // good signal.  note the end time, and set the display update flag
-//    timeBarrelEnd = micros();
-//    timeBarrelEndFlag = true;
-//    debug_barrelEnd_glitch = true;
-//  }
-//}
 
-#define BARREL_START    0
-#define BARREL_END      1
+#define BARREL_START                0
+#define BARREL_END                  1
 #define BARREL_INTER_DART_TIME_US   10000L
 #define BARREL_DART_TIME_US         1000L
 
@@ -294,10 +252,6 @@ void buttonUpdateHistory(uint8_t buttonBits) {
 }
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println(F("NerfComp: Styrfe ver 0.1"));
-  Serial.print(F("   Free RAM:")); Serial.print(freeRam()); Serial.println(F(" bytes"));
-
   // Setup the pins and interrupts for the barrel photo interrupters
   pinMode(PIN_BARREL_START, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(PIN_BARREL_START), irqBarrelStart, RISING);
@@ -310,11 +264,6 @@ void setup() {
   pinMode(PIN_MAGSWITCH, INPUT_PULLUP);
   pinMode(PIN_JAMDOOR, INPUT_PULLUP);
 
-  pinMode(PIN_MAGTYPE_BIT0, INPUT_PULLUP);
-  pinMode(PIN_MAGTYPE_BIT1, INPUT_PULLUP);
-  pinMode(PIN_MAGTYPE_BIT2, INPUT_PULLUP);
-  pinMode(PIN_MAGTYPE_BIT3, INPUT_PULLUP);
-
   pinMode(PIN_BUTTON_UP, INPUT_PULLUP);
   pinMode(PIN_BUTTON_DOWN, INPUT_PULLUP);
   pinMode(PIN_BUTTON_SELECT, INPUT_PULLUP);
@@ -324,6 +273,16 @@ void setup() {
   // init the servo for the ESC
   ESCServo.attach(PIN_FLYWHEEL_MOTOR_ESC); // attaches the servo on pin 9 to the servo object
   ESCServo.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);
+
+  // init the port expanders for mag type and HUD buttons
+  magTypePortExpander.begin(0);
+  magTypePortExpander.pinMode(0, INPUT);
+
+
+  // init the serial port for debugging output
+  Serial.begin(115200);
+  Serial.println(F("NerfComp: Styrfe ver 0.1"));
+  Serial.print(F("   Free RAM:")); Serial.print(freeRam()); Serial.println(F(" bytes"));
 
   // init the LED Display
   // generate the high voltage from the 3.3v line internally! (neat!)

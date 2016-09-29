@@ -9,6 +9,8 @@
 #include <Servo.h>
 #include <avr/pgmspace.h>
 
+////////////////////////////////////////////////////////////////////////////////
+
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 
