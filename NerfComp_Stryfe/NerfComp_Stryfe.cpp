@@ -50,7 +50,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define DART_LENGTH_INCHES              2.85
 
 #define HEARTBEAT_UPDATE_PERIOD         50
-#define HEARTBEAT_PRINT_PERIOD          1000
+#define HEARTBEAT_PRINT_PERIOD          500
 
 #define VOLTAGE_MIN         0.0
 #define VOLTAGE_MAX         15.0
@@ -107,10 +107,10 @@ typedef struct ConfigOption {
 #define CONFIG_TYPE_BOOLEAN   2
 #define CONFIG_TYPE_STRING    3
 
-uint8_t config_VoltageAdj_Val;
-uint8_t config_VoltageAdj_ValDefault = 0;
-const ConfigOption configVoltageAdj = {"VoltageAdj", CONFIG_TYPE_INT8, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
-const ConfigOption configVoltageAdj = {"VelocityAdj", CONFIG_TYPE_INT16, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
+//uint8_t config_VoltageAdj_Val;
+//uint8_t config_VoltageAdj_ValDefault = 0;
+//const ConfigOption configVoltageAdj = {"VoltageAdj", CONFIG_TYPE_INT8, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
+//const ConfigOption configVoltageAdj = {"VelocityAdj", CONFIG_TYPE_INT16, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
 
 // global variables for main system status
 uint8_t magazineType = MAGTYPE_EMPTY;
@@ -140,7 +140,7 @@ unsigned long heartbeatPrintTime = 0;
 // create a servo object to control the flywheel ESC
 Servo ESCServo;
 
-//GPIO Port expander fr mag type
+// GPIO Port expander fr mag type
 Adafruit_MCP23008 magGPIO;
 
 // forward function declatations
@@ -161,8 +161,8 @@ boolean jamDoorRead() { return digitalRead(PIN_JAMDOOR); }
 
 // magazine bits
 uint8_t magBitsRead() {
-  uint8_t bits = !magGPIO.readGPIO();
-  return ((!bits) >> 1) & 0x0f;
+  uint8_t bits = magGPIO.readGPIO();
+  return ((~bits) >> 1) & 0x0f;
 }
 
 // UI buttons
@@ -227,8 +227,6 @@ uint8_t magTypeRead() {
   uint8_t magType = 0;
   if (magazineSwitchRead()) {
     magType = magBitsRead();
-    // debug code until the sensor board is finished
-    magType = MAGTYPE_CLIP_6;
   }
   return magType;
 }
@@ -296,15 +294,10 @@ void setup() {
 
   // init the port expanders for mag type and HUD buttons
   magGPIO.begin(0);      // use default address 0
-  magGPIO.pinMode(1, INPUT);
-  magGPIO.pullUp(1, HIGH);  // turn on a 100K pullup internally
-  magGPIO.pinMode(2, INPUT);
-  magGPIO.pullUp(2, HIGH);  // turn on a 100K pullup internally
-  magGPIO.pinMode(3, INPUT);
-  magGPIO.pullUp(3, HIGH);  // turn on a 100K pullup internally
-  magGPIO.pinMode(4, INPUT);
-  magGPIO.pullUp(4, HIGH);  // turn on a 100K pullup internally
-
+  for (int i = 0; i < 8; ++i) {
+    magGPIO.pinMode(i, INPUT);
+    magGPIO.pullUp(i, HIGH);  // turn on a 100K pullup internally
+  }
 
   // init the serial port for debugging output
   Serial.begin(115200);
