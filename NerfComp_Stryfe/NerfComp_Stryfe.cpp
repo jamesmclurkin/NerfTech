@@ -96,12 +96,21 @@ MagazineType const magazineTypes[] = {
 };
 
 typedef struct ConfigOption {
-  const char * name;
   const char* name;
-  const uint8_t capacity;
-} MagazineType;
+  const uint8_t type;
+  const void * pData;
+  const void * pDataDefault;
+} ConfigOption;
 
+#define CONFIG_TYPE_INT8      0
+#define CONFIG_TYPE_INT16     1
+#define CONFIG_TYPE_BOOLEAN   2
+#define CONFIG_TYPE_STRING    3
 
+uint8_t config_VoltageAdj_Val;
+uint8_t config_VoltageAdj_ValDefault = 0;
+const ConfigOption configVoltageAdj = {"VoltageAdj", CONFIG_TYPE_INT8, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
+const ConfigOption configVoltageAdj = {"VelocityAdj", CONFIG_TYPE_INT16, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
 
 // global variables for main system status
 uint8_t magazineType = MAGTYPE_EMPTY;
