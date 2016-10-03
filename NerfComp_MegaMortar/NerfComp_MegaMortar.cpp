@@ -23,6 +23,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define PIN_JAMDOOR                 6
 #define PIN_TRIGGER                 12
 #define PIN_VOLTAGE_BATTERY         A7
+#define PIN_VOLTAGE_PRESSURE        A6
 
 #define PIN_DRIVE_MOTOR_FWD         7
 #define PIN_DRIVE_MOTOR_REV         8
@@ -31,8 +32,12 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define PIN_VALVE_BARREL            5
 #define PIN_VALVE_EXHAUST           10
 
-#define VOLTAGE_BATTERY_SCALER      (1/65.8)
-#define VOLTAGE_BATTERY_IIR_GAIN    0.01
+//#define VOLTAGE_BATTERY_SCALER      (1/65.8)
+#define VOLTAGE_BATTERY_SCALER      0.0152
+#define VOLTAGE_BATTERY_IIR_GAIN    0.005
+
+#define PRESSURE_SCALER      0.1
+#define PRESSURE_IIR_GAIN    0.1
 
 #define MOTOR_DIR_FWD               0
 #define MOTOR_DIR_REV               1
@@ -40,14 +45,14 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define MOTOR_DIR_OFF               3
 
 #define VALVE_OFF                   0
-#define VALVE_BARREL_ON                1
-#define VALVE_EXHAUST_ON               2
+#define VALVE_BARREL_ON             1
+#define VALVE_EXHAUST_ON            2
 
-#define PIN_PUMP_ESC                  9
+#define PIN_PUMP_ESC                9
 
-#define ROUND_STATE_IDLE              0
-#define ROUND_STATE_VALVE_OPEN        1
-#define ROUND_STATE_VALVE_WAIT        2
+#define ROUND_STATE_IDLE            0
+#define ROUND_STATE_VALVE_OPEN      1
+#define ROUND_STATE_VALVE_WAIT      2
 
 #define PLUNGER_PWM_RUN_SPEED           145
 #define PLUNGER_PWM_MAX                 255
@@ -88,7 +93,7 @@ int roundsPerMin = -1;
 int roundsJamCount = 0;
 float velocity = -1;
 float voltageBattery = 0.0;
-float voltageBatteryAvg = 0.0;
+float pressure = 0.0;
 boolean jamDoorOpen = false;
 
 volatile unsigned long timeBarrelStart = 0;
@@ -257,6 +262,20 @@ unsigned long displayUpdateTime = 0;
 
 boolean sp = true;
 
+float readAnalog(float val, int pin, float scaler, float offset, float min, float max, float IIRGain) {
+  int valADC = analogRead(pin);
+  float valTemp = (float)valADC * scaler + offset;
+  if ((valTemp >= min) && (valTemp <= max)) {
+    if (val == 0.0) {
+      val = valTemp;
+    } else {
+      // compute a IIR low-pass filter
+      val = IIRGain * valTemp + (1 - IIRGain) * val;
+    }
+  }
+  return val;
+}
+
 void loop() {
   static unsigned long roundTimePrev = 0;
 
@@ -324,21 +343,26 @@ void loop() {
     if (p) {Serial.print("  rounds="); Serial.print(roundCount, DEC); }
 
 
-    // update the motor voltage
-    int voltageBatteryRaw = analogRead(PIN_VOLTAGE_BATTERY);
-    float voltageBatteryTemp = (float) voltageBatteryRaw * VOLTAGE_BATTERY_SCALER;
+    // update the battery voltage
+//    int voltageBatteryRaw = analogRead(PIN_VOLTAGE_BATTERY);
+//    float voltageBatteryTemp = (float) voltageBatteryRaw * VOLTAGE_BATTERY_SCALER;
+//    if (p) {Serial.print("  vbat="); Serial.print(voltageBatteryAvg, DEC); }
+//    if (p) {Serial.print(","); Serial.print(voltageBatteryTemp, 2); }
+//    // add some sanity checks to the voltage
+//    if ((voltageBatteryTemp >= VOLTAGE_MIN) && (voltageBatteryTemp <= VOLTAGE_MAX)) {
+//      // compute a IIR low-pass filter
+//      voltageBatteryAvg = VOLTAGE_BATTERY_IIR_GAIN * voltageBatteryTemp + (1 - VOLTAGE_BATTERY_IIR_GAIN) * voltageBattery;
+//      voltageBattery = voltageBatteryTemp;
+//    }
 
-    if (p) {Serial.print("  vbat="); Serial.print(voltageBatteryAvg, DEC); }
-    if (p) {Serial.print(","); Serial.print(voltageBatteryTemp, 2); }
-    // add some sanity checks to the voltage
-    if ((voltageBatteryTemp >= VOLTAGE_MIN) && (voltageBatteryTemp <= VOLTAGE_MAX)) {
-      // compute a IIR low-pass filter
-      voltageBatteryAvg = VOLTAGE_BATTERY_IIR_GAIN * voltageBatteryTemp + (1 - VOLTAGE_BATTERY_IIR_GAIN) * voltageBattery;
-      voltageBattery = voltageBatteryTemp;
-    }
+    voltageBattery = readAnalog(voltageBattery, PIN_VOLTAGE_BATTERY, VOLTAGE_BATTERY_SCALER, 0, VOLTAGE_MIN, VOLTAGE_MAX, VOLTAGE_BATTERY_IIR_GAIN);
+    if (p) {Serial.print("  vbat="); Serial.print(voltageBattery, 2); }
+
+    pressure = readAnalog(pressure, PIN_VOLTAGE_PRESSURE, PRESSURE_SCALER, 0, 0, 100, PRESSURE_IIR_GAIN);
+    if (p) {Serial.print("  pres="); Serial.print(pressure, 1); }
+
+
   }
-
-
   // use the belt door switch to trigger the pump for now
   int ESCPos = PUMP_ESC_NEUTRAL;
   if (beltDoorRead()) {
@@ -415,8 +439,11 @@ void displayUpdate() {
   display.print("  System Diagonstic  ");
 
   display.setTextColor(WHITE);
-  display.print("Volt:"); display.println(voltageBatteryAvg, 1);
+  display.print("Volt:"); display.println(voltageBattery, 1);
   display.print("Jam:"); printBit(jamDoorRead()); display.println(" ");
+  display.setTextSize(2);
+  display.print("pADC:"); display.println(analogRead(PIN_VOLTAGE_PRESSURE), DEC);
+  display.print("Pres:"); display.println(pressure, 1);
   display.display();
 }
 
