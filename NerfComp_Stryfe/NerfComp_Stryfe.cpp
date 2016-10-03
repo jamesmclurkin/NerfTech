@@ -73,6 +73,9 @@ Adafruit_SSD1306 display(OLED_RESET);
 
 #define MAGAZINE_TYPE_DELAY   3
 
+#define DISPLAY_UPDATE_PERIOD 100
+
+
 typedef struct MagazineType {
   const uint8_t code;
   const char* name;
@@ -92,7 +95,13 @@ MagazineType const magazineTypes[] = {
     {MAGTYPE_UNKNOWN, "????", 10 }
 };
 
-#define DISPLAY_UPDATE_PERIOD 100
+typedef struct ConfigOption {
+  const char * name;
+  const char* name;
+  const uint8_t capacity;
+} MagazineType;
+
+
 
 // global variables for main system status
 uint8_t magazineType = MAGTYPE_EMPTY;
