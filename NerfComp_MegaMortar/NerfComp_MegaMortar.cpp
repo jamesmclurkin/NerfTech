@@ -36,8 +36,9 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define VOLTAGE_BATTERY_SCALER      0.0152
 #define VOLTAGE_BATTERY_IIR_GAIN    0.005
 
-#define PRESSURE_SCALER      0.1
-#define PRESSURE_IIR_GAIN    0.1
+#define PRESSURE_SCALER      0.114
+#define PRESSURE_OFFSET      -11.9
+#define PRESSURE_IIR_GAIN    0.05
 
 #define MOTOR_DIR_FWD               0
 #define MOTOR_DIR_REV               1
@@ -358,7 +359,8 @@ void loop() {
     voltageBattery = readAnalog(voltageBattery, PIN_VOLTAGE_BATTERY, VOLTAGE_BATTERY_SCALER, 0, VOLTAGE_MIN, VOLTAGE_MAX, VOLTAGE_BATTERY_IIR_GAIN);
     if (p) {Serial.print("  vbat="); Serial.print(voltageBattery, 2); }
 
-    pressure = readAnalog(pressure, PIN_VOLTAGE_PRESSURE, PRESSURE_SCALER, 0, 0, 100, PRESSURE_IIR_GAIN);
+    pressure = readAnalog(pressure, PIN_VOLTAGE_PRESSURE, PRESSURE_SCALER, PRESSURE_OFFSET, 0, 100, PRESSURE_IIR_GAIN);
+    //pressure = 0.0;
     if (p) {Serial.print("  pres="); Serial.print(pressure, 1); }
 
 
