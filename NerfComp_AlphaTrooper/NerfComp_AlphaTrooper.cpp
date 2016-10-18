@@ -19,7 +19,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 
 #define PIN_BARREL_START        2
 #define PIN_BARREL_END          3
-#define PIN_MAGSWITCH           4
 #define PIN_JAMDOOR             6
 #define PIN_VOLTAGE_BATTERY       A7
 
@@ -86,22 +85,6 @@ MagazineType const magazineTypes[] = {
     {MAGTYPE_UNKNOWN, "????", 10 }
 };
 
-typedef struct ConfigOption {
-  const char* name;
-  const uint8_t type;
-  const void * pData;
-  const void * pDataDefault;
-} ConfigOption;
-
-#define CONFIG_TYPE_INT8      0
-#define CONFIG_TYPE_INT16     1
-#define CONFIG_TYPE_BOOLEAN   2
-#define CONFIG_TYPE_STRING    3
-
-//uint8_t config_VoltageAdj_Val;
-//uint8_t config_VoltageAdj_ValDefault = 0;
-//const ConfigOption configVoltageAdj = {"VoltageAdj", CONFIG_TYPE_INT8, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
-//const ConfigOption configVoltageAdj = {"VelocityAdj", CONFIG_TYPE_INT16, &config_VoltageAdj_Val, &config_VoltageAdj_ValDefault};
 
 // global variables for main system status
 uint8_t magazineType = MAGTYPE_EMPTY;
@@ -119,11 +102,6 @@ volatile boolean timeBarrelStartFlag = false;
 
 volatile unsigned long timeBarrelEnd = 0;
 volatile boolean timeBarrelEndFlag = false;
-
-//volatile boolean debug_barrelStart = false;
-//volatile boolean debug_barrelStart_glitch = false;
-//volatile boolean debug_barrelEnd = false;
-//volatile boolean debug_barrelEnd_glitch = false;
 
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
@@ -143,13 +121,12 @@ int freeRam () {
 }
 
 // switches
-boolean magazineSwitchRead() { return !digitalRead(PIN_MAGSWITCH); }
 boolean jamDoorRead() { return digitalRead(PIN_JAMDOOR); }
 
 // magazine bits
 uint8_t magBitsRead() {
   uint8_t bits = magGPIO.readGPIO();
-  return ((~bits) >> 1) & 0x0f;
+  return ((~bits) >> 4) & 0x0f;
 }
 
 // UI buttons
@@ -211,10 +188,8 @@ void irqBarrelEnd() {
 }
 
 uint8_t magTypeRead() {
-  uint8_t magType = 0;
-  if (magazineSwitchRead()) {
-    magType = magBitsRead();
-  }
+  uint8_t magType;
+  magType = magBitsRead();
   return magType;
 }
 
@@ -265,7 +240,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PIN_BARREL_END), irqBarrelEnd, FALLING);
 
   // Setup the pins for magazine type sensors and jam door sensor
-  pinMode(PIN_MAGSWITCH, INPUT_PULLUP);
   pinMode(PIN_JAMDOOR, INPUT_PULLUP);
 
   pinMode(PIN_BUTTON_UP, INPUT_PULLUP);
@@ -462,8 +436,8 @@ void loop() {
     }
 
     // print diagnostic switch status on serial port
-    if (p) {Serial.print(F(" mag=")); Serial.print(magazineSwitchRead());}
     if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
+    if (p) {Serial.print(F(" maggpio=")); Serial.print(magGPIO.readGPIO());}
 
     // check the UI buttons
     uint8_t buttonBits = buttonRead();
@@ -528,8 +502,7 @@ void displayScreenDiag() {
 
   display.setTextColor(WHITE);
   display.print("Volt:"); display.println(voltageBatteryAvg, 1);
-  display.print("Jam:"); printBit(jamDoorRead()); display.print(" ");
-  display.print("Mag:"); printBit(magazineSwitchRead()); display.println("");
+  display.print("Jam:"); printBit(jamDoorRead()); display.println(" ");
   display.print("MagBits:");
     uint8_t bits = magBitsRead();
     printBit(bitRead(bits, 0));
@@ -599,13 +572,14 @@ void displayScreenHUD() {
 }
 
 void displayUpdate() {
-  switch (UIMode) {
-  case UI_SCREEN_DIAGNOSTIC:
-    displayScreenDiag();
-    break;
-  default:
-  case UI_SCREEN_HUD:
-    displayScreenHUD();
-    break;
-  }
+  displayScreenDiag();
+//  switch (UIMode) {
+//  case UI_SCREEN_DIAGNOSTIC:
+//    displayScreenDiag();
+//    break;
+//  default:
+//  case UI_SCREEN_HUD:
+//    displayScreenHUD();
+//    break;
+//  }
 }

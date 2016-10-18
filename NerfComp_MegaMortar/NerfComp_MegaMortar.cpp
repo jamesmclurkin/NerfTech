@@ -360,7 +360,6 @@ void loop() {
     if (p) {Serial.print("  vbat="); Serial.print(voltageBattery, 2); }
 
     pressure = readAnalog(pressure, PIN_VOLTAGE_PRESSURE, PRESSURE_SCALER, PRESSURE_OFFSET, 0, 100, PRESSURE_IIR_GAIN);
-    //pressure = 0.0;
     if (p) {Serial.print("  pres="); Serial.print(pressure, 1); }
 
 
