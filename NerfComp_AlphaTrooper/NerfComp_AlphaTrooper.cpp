@@ -106,8 +106,9 @@ volatile boolean timeBarrelEndFlag = false;
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
 
-// GPIO Port expander fr mag type
+// GPIO Port expanders for mag type and HUD Screen UI
 Adafruit_MCP23008 magGPIO;
+Adafruit_MCP23008 hudGPIO;
 
 // forward function declatations
 void displayUpdate(void);
@@ -250,9 +251,12 @@ void setup() {
 
   // init the port expanders for mag type and HUD buttons
   magGPIO.begin(0);      // use default address 0
+  hudGPIO.begin(1);
   for (int i = 0; i < 8; ++i) {
     magGPIO.pinMode(i, INPUT);
     magGPIO.pullUp(i, HIGH);  // turn on a 100K pullup internally
+    hudGPIO.pinMode(i, INPUT);
+    hudGPIO.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
 
   // init the serial port for debugging output
@@ -438,6 +442,7 @@ void loop() {
     // print diagnostic switch status on serial port
     if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
     if (p) {Serial.print(F(" maggpio=")); Serial.print(magGPIO.readGPIO());}
+    if (p) {Serial.print(F(" hudgpio=")); Serial.print(hudGPIO.readGPIO());}
 
     // check the UI buttons
     uint8_t buttonBits = buttonRead();
