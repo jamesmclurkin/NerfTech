@@ -46,13 +46,14 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define PLUNGER_STATE_ROUND_DELAY       4
 #define PLUNGER_STATE_WAIT_FOR_TRIGGGER_RELEASE 5
 
-#define PLUNGER_PWM_RUN_SPEED           145
+//#define PLUNGER_PWM_RUN_SPEED           145
+#define PLUNGER_PWM_RUN_SPEED           120
 #define PLUNGER_PWM_MAX                 255
 
 #define TRIGGER_DELAY_TIME              10
 #define ROUND_DELAY_TIME                10
-#define FLYWHEEL_REVUP_TIME_SEMI        300
-#define FLYWHEEL_REVUP_TIME_FULL        200
+#define FLYWHEEL_REVUP_TIME_SEMI        500
+#define FLYWHEEL_REVUP_TIME_FULL        300
 #define FLYWHEEL_REVDOWN_TIME_FULL      2000
 
 #define FLYWHEEL_MOTOR_ESC_NEUTRAL      90
@@ -108,6 +109,7 @@ MagazineType const magazineTypes[] = {
     {MAGTYPE_DRUM_35, "Drum35", 35 },
     {MAGTYPE_UNKNOWN, "????", 10 }
 };
+
 
 #define DISPLAY_UPDATE_PERIOD 100
 
