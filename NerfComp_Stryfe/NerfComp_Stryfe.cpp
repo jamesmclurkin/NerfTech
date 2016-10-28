@@ -159,10 +159,20 @@ boolean revTriggerRead() { return !digitalRead(PIN_REVTRIGGER); }
 boolean magazineSwitchRead() { return !digitalRead(PIN_MAGSWITCH); }
 boolean jamDoorRead() { return digitalRead(PIN_JAMDOOR); }
 
+uint8_t flipLowNibble(uint8_t val) {
+	uint8_t rval = 0;
+	if(val & 0x01) {rval |= 0x08;}
+	if(val & 0x02) {rval |= 0x04;}
+	if(val & 0x04) {rval |= 0x02;}
+	if(val & 0x08) {rval |= 0x01;}
+	return rval;
+}
+
 // magazine bits
 uint8_t magBitsRead() {
   uint8_t bits = magGPIO.readGPIO();
-  return ((~bits) >> 1) & 0x0f;
+  bits = ((~bits) >> 4) & 0x0f;
+  return flipLowNibble(bits);
 }
 
 // UI buttons
@@ -480,9 +490,12 @@ void loop() {
     }
 
     // print diagnostic switch status on serial port
-    if (p) {Serial.print(F(" mag=")); Serial.print(magazineSwitchRead());}
-    if (p) {Serial.print(F(" revTrig=")); Serial.print(revTriggerRead());}
-    if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
+    //if (p) {Serial.print(F(" mag=")); Serial.print(magazineSwitchRead());}
+    //if (p) {Serial.print(F(" revTrig=")); Serial.print(revTriggerRead());}
+    //if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
+
+    if (p) {Serial.print(F(" maggpio=")); Serial.print(magGPIO.readGPIO());}
+
 
     // check the UI buttons
     uint8_t buttonBits = buttonRead();

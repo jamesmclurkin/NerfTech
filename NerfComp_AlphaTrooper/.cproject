@@ -22,8 +22,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/core/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/core/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/Wire}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/SPI}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/SPI/src}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.cpp.sketch.input.289777736" name="CPP source files" superClass="it.baeyens.arduino.compiler.cpp.sketch.input"/>
@@ -33,8 +33,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/core/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/core/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/Wire}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/SPI}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_AlphaTrooper/libraries/SPI/src}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.c.sketch.input.56427824" name="C Source Files" superClass="it.baeyens.arduino.compiler.c.sketch.input"/>

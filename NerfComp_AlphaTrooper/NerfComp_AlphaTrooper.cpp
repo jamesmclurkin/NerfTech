@@ -123,10 +123,23 @@ int freeRam () {
 // switches
 boolean jamDoorRead() { return digitalRead(PIN_JAMDOOR); }
 
+uint8_t flipLowNibble(uint8_t val) {
+	uint8_t rval = 0;
+	if(val & 0x01) {rval |= 0x08;}
+	if(val & 0x02) {rval |= 0x04;}
+	if(val & 0x04) {rval |= 0x02;}
+	if(val & 0x08) {rval |= 0x01;}
+	return rval;
+}
+
 // magazine bits
 uint8_t magBitsRead() {
   uint8_t bits = magGPIO.readGPIO();
-  return ((~bits) >> 4) & 0x0f;
+  // code for PCB ersion of mag sensor
+  //return ((~bits) >> 4) & 0x0f;
+  // The alpha trooper has the prototype, hand assembled mag sensor.  bits 1-4 are active, reverse order (bit 1 is MSB)
+  bits = ((~bits) >> 1) & 0x0f;
+  return flipLowNibble(bits);
 }
 
 // UI buttons
@@ -249,7 +262,7 @@ void setup() {
 
 
   // init the port expanders for mag type and HUD buttons
-  magGPIO.begin(0);      // use default address 0
+  magGPIO.begin(0);      // mag GPIO is on address 0
   for (int i = 0; i < 8; ++i) {
     magGPIO.pinMode(i, INPUT);
     magGPIO.pullUp(i, HIGH);  // turn on a 100K pullup internally
@@ -572,14 +585,14 @@ void displayScreenHUD() {
 }
 
 void displayUpdate() {
-  displayScreenDiag();
-//  switch (UIMode) {
-//  case UI_SCREEN_DIAGNOSTIC:
-//    displayScreenDiag();
-//    break;
-//  default:
-//  case UI_SCREEN_HUD:
-//    displayScreenHUD();
-//    break;
-//  }
+  //UIMode = UI_SCREEN_DIAGNOSTIC;
+  switch (UIMode) {
+  case UI_SCREEN_DIAGNOSTIC:
+    displayScreenDiag();
+    break;
+  default:
+  case UI_SCREEN_HUD:
+    displayScreenHUD();
+    break;
+  }
 }

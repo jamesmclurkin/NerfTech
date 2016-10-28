@@ -22,10 +22,10 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/core/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/core/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Wire}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/SPI}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Servo}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Wire/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Servo/src}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.cpp.sketch.input.141376479" name="CPP source files" superClass="it.baeyens.arduino.compiler.cpp.sketch.input"/>
@@ -35,10 +35,10 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/core/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/core/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Wire}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/SPI}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Servo}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Wire/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_Stryfe/libraries/Servo/src}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.c.sketch.input.1890266983" name="C Source Files" superClass="it.baeyens.arduino.compiler.c.sketch.input"/>

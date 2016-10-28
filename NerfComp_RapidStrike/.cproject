@@ -22,13 +22,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/core/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/core/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Wire}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/SPI}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Servo}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Wire/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Servo/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Adafruit_SSD1306}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Adafruit_GFX_Library}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.cpp.sketch.input.548951716" name="CPP source files" superClass="it.baeyens.arduino.compiler.cpp.sketch.input"/>
 							</tool>
@@ -37,13 +35,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/core/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/core/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Wire}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Wire/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/SPI}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Servo}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Wire/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/SPI/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Servo/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Adafruit_SSD1306}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/NerfComp_RapidStrike/libraries/Adafruit_GFX_Library}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.c.sketch.input.487877602" name="C Source Files" superClass="it.baeyens.arduino.compiler.c.sketch.input"/>
 							</tool>
