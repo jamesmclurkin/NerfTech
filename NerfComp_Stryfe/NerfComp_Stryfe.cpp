@@ -115,7 +115,7 @@ typedef struct ConfigOption {
 // global variables for main system status
 uint8_t magazineType = MAGTYPE_EMPTY;
 MagazineType* magazineTypePtr = (MagazineType*)&magazineTypes[MAGTYPE_EMPTY];
-uint8_t roundCount = -1;
+int8_t roundCount = -1;
 int16_t roundsPerMin = -1;
 uint8_t roundsJamCount = 0;
 float velocity = -1;

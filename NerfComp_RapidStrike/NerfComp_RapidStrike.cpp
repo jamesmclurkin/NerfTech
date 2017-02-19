@@ -11,9 +11,12 @@
 #include <avr/pgmspace.h>
 
 ////////////////////////////////////////////////////////////////////////////////
+//#define SCREEN_ENABLE
 
 #define OLED_RESET 4
+#ifdef SCREEN_ENABLE
 Adafruit_SSD1306 display(OLED_RESET);
+#endif
 
 #include "SevenSegmentBitmaps.h"
 #include "NerfLogo.h"
@@ -115,11 +118,11 @@ MagazineType const magazineTypes[] = {
 
 
 // global variables for main system stats
-int magazineType = MAGTYPE_EMPTY;
+uint8_t magazineType = MAGTYPE_EMPTY;
 MagazineType* magazineTypePtr = (MagazineType*)&magazineTypes[MAGTYPE_EMPTY];
-int roundCount = -1;
-int roundsPerMin = -1;
-int roundsJamCount = 0;
+int8_t roundCount = -1;
+int16_t roundsPerMin = -1;
+uint8_t roundsJamCount = 0;
 float velocity = -1;
 float voltageBattery = 0.0;
 float voltageBatteryAvg = 0.0;
@@ -394,6 +397,8 @@ void setup() {
   Serial.print(F("   Free RAM:")); Serial.print(freeRam()); Serial.println(F(" bytes"));
 
   // init the LED Display
+#ifdef SCREEN_ENABLE
+
   // generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
 
@@ -404,6 +409,7 @@ void setup() {
 
   // show the screen for a while
   delay(2000);
+#endif
 
   // force an update to show  the initial data display
   displayUpdate();
@@ -674,6 +680,7 @@ void loop() {
 #define POSY_SEVEN_SEG_DIGIT  12
 
 void displayUpdate() {
+#ifdef SCREEN_ENABLE
   // Draw the HUD Display
   display.clearDisplay();
   display.setTextColor(WHITE);
@@ -727,4 +734,5 @@ void displayUpdate() {
   POSX_SEVEN_SEG_DIGIT_0 - 3, display.height() - 1, WHITE);
 
   display.display();
+#endif
 }
