@@ -140,19 +140,13 @@ unsigned long heartbeatPrintTime = 0;
 // create a servo object to control the flywheel ESC
 Servo ESCServo;
 
-// GPIO Port expander fr mag type
-Adafruit_MCP23008 magGPIO;
+// GPIO Port expander for mag type and screen UI
+Adafruit_MCP23008 GPIO_mag;
 
 // forward function declatations
 void displayUpdate(void);
 
 
-
-int freeRam () {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
 
 // switches
 boolean revTriggerRead() { return !digitalRead(PIN_REVTRIGGER); }
@@ -170,16 +164,20 @@ uint8_t flipLowNibble(uint8_t val) {
 
 // magazine bits
 uint8_t magBitsRead() {
-  uint8_t bits = magGPIO.readGPIO();
+  uint8_t bits = GPIO_mag.readGPIO();
   bits = ((~bits) >> 4) & 0x0f;
   return flipLowNibble(bits);
 }
 
-// UI buttons
-boolean buttonUpRead() { return !digitalRead(PIN_BUTTON_UP); }
-boolean buttonDownRead() { return !digitalRead(PIN_BUTTON_DOWN); }
-boolean buttonSelectRead() { return !digitalRead(PIN_BUTTON_SELECT); }
-boolean buttonBackRead() { return !digitalRead(PIN_BUTTON_BACK); }
+uint8_t magTypeRead() {
+  uint8_t magType = MAGTYPE_EMPTY;
+  if (magazineSwitchRead()) {
+    magType = magBitsRead();
+  }
+  return magType;
+}
+
+
 
 boolean barrelRead() { return digitalRead(PIN_BARREL_START); }
 
@@ -233,15 +231,9 @@ void irqBarrelEnd() {
   }
 }
 
-uint8_t magTypeRead() {
-  uint8_t magType = 0;
-  if (magazineSwitchRead()) {
-    magType = magBitsRead();
-  }
-  return magType;
-}
 
-// UI stuff
+
+//////// user Interface ////////
 #define UI_SCREEN_HUD         0
 #define UI_SCREEN_DIAGNOSTIC  1
 
@@ -249,6 +241,12 @@ uint8_t UIMode = UI_SCREEN_HUD;
 
 uint8_t buttonBitsOld1 = 0;
 uint8_t buttonBitsOld2 = 0;
+
+// UI buttons
+boolean buttonUpRead() { return !digitalRead(PIN_BUTTON_UP); }
+boolean buttonDownRead() { return !digitalRead(PIN_BUTTON_DOWN); }
+boolean buttonSelectRead() { return !digitalRead(PIN_BUTTON_SELECT); }
+boolean buttonBackRead() { return !digitalRead(PIN_BUTTON_BACK); }
 
 uint8_t buttonRead() {
   uint8_t buttonBits = 0;
@@ -279,6 +277,15 @@ void buttonUpdateHistory(uint8_t buttonBits) {
   buttonBitsOld1 = buttonBits;
 }
 
+
+//////// setup ////////
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
+
 void setup() {
   // Setup the pins and interrupts for the barrel photo interrupters
   pinMode(PIN_BARREL_START, INPUT_PULLUP);
@@ -303,10 +310,10 @@ void setup() {
   ESCServo.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);
 
   // init the port expanders for mag type and HUD buttons
-  magGPIO.begin(0);      // use default address 0
+  GPIO_mag.begin(0);      // GPIO magazine is on address 0
   for (int i = 0; i < 8; ++i) {
-    magGPIO.pinMode(i, INPUT);
-    magGPIO.pullUp(i, HIGH);  // turn on a 100K pullup internally
+    GPIO_mag.pinMode(i, INPUT);
+    GPIO_mag.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
 
   // init the serial port for debugging output
@@ -494,7 +501,7 @@ void loop() {
     //if (p) {Serial.print(F(" revTrig=")); Serial.print(revTriggerRead());}
     //if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
 
-    if (p) {Serial.print(F(" maggpio=")); Serial.print(magGPIO.readGPIO());}
+    if (p) {Serial.print(F(" maggpio=")); Serial.print(GPIO_mag.readGPIO());}
 
 
     // check the UI buttons

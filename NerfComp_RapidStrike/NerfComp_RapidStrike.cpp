@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include "libraries\Adafruit_GFX.h"
 #include "libraries\Adafruit_SSD1306.h"
+#include "libraries\Adafruit_MCP23008.h"
 #include <Servo.h>
 #include <avr/pgmspace.h>
 
@@ -84,10 +85,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define MAGTYPE_DRUM_35   12
 #define MAGTYPE_UNKNOWN   16
 
-#define PIN_MAGTYPE_BIT0       A0
-#define PIN_MAGTYPE_BIT1       A1
-#define PIN_MAGTYPE_BIT2       A2
-#define PIN_MAGTYPE_BIT3       A3
 
 #define MAGAZINE_TYPE_DELAY     3
 
@@ -139,8 +136,12 @@ void displayUpdate(void);
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
 
-// create servo object to control the flywheel ESC
+// create a servo object to control the flywheel ESC
 Servo servoESC;
+
+// GPIO Port expander for mag type and screen UI
+Adafruit_MCP23008 GPIO_mag;
+Adafruit_MCP23008 GPIO_UI;
 
 boolean magazineSwitchRead() {
   return !digitalRead(PIN_MAGSWITCH);
@@ -162,6 +163,30 @@ boolean plungerEndRead() {
   return !digitalRead(PIN_PLUNGER_END);
 }
 
+uint8_t flipLowNibble(uint8_t val) {
+  uint8_t rval = 0;
+  if(val & 0x01) {rval |= 0x08;}
+  if(val & 0x02) {rval |= 0x04;}
+  if(val & 0x04) {rval |= 0x02;}
+  if(val & 0x08) {rval |= 0x01;}
+  return rval;
+}
+
+// magazine bits
+uint8_t magBitsRead() {
+  uint8_t bits = GPIO_mag.readGPIO();
+  bits = ((~bits) >> 4) & 0x0f;
+  return flipLowNibble(bits);
+}
+
+uint8_t magTypeRead() {
+  uint8_t magType = MAGTYPE_EMPTY;
+  if (magazineSwitchRead()) {
+    magType = magBitsRead();
+  }
+  return magType;
+}
+
 MagazineType* magazineTypeLookup(int magTypeVal) {
   uint8_t typeIdx = 0;
   const MagazineType* tempPtr;
@@ -177,54 +202,125 @@ MagazineType* magazineTypeLookup(int magTypeVal) {
   return (MagazineType*)tempPtr;
 }
 
-#define GLITCH_CHECKS 4
+//#define GLITCH_CHECKS 4
+//
+//boolean glitchReject(int pin) {
+//  boolean returnVal = true;
+//  volatile int i;
+//
+//  for (i = 0; i < GLITCH_CHECKS; i++) {
+//    if (digitalRead(pin) == LOW) {
+//      // Pin is low again.  this was a glitch.  return false.
+//      returnVal = false;
+//      break;
+//    } else {
+//      // want ~500ns delay here, around 10 clock ticks
+//      i++;
+//      i--;
+//      i++;
+//      i--;
+//    }
+//  }
+//  return returnVal;
+//}
+//
+//void irqBarrelStart() {
+//  // the dart crossed the first (chamber) barrel sensor
+//  if (glitchReject(PIN_BARREL_START)) {
+//    // good signal.  note the start time
+//    timeBarrelStart = micros();
+//  }
+//}
+//
+//void irqBarrelEnd() {
+//  // the dart crossed the last (muzzle) barrel sensor
+//  if (glitchReject(PIN_BARREL_END)) {
+//    // good signal.  note the end time, and set the display update flag
+//    timeBarrelEnd = micros();
+//    timeBarrelEndFlag = true;
+//  }
+//}
 
-boolean glitchReject(int pin) {
-  boolean returnVal = true;
-  volatile int i;
+#define BARREL_START                0
+#define BARREL_END                  1
+#define BARREL_INTER_DART_TIME_US   10000L
+#define BARREL_DART_TIME_US         1000L
 
-  for (i = 0; i < GLITCH_CHECKS; i++) {
-    if (digitalRead(pin) == LOW) {
-      // Pin is low again.  this was a glitch.  return false.
-      returnVal = false;
-      break;
-    } else {
-      // want ~500ns delay here, around 10 clock ticks
-      i++;
-      i--;
-      i++;
-      i--;
-    }
-  }
-  return returnVal;
-}
+volatile uint8_t barrelIRQState = BARREL_START;
 
 void irqBarrelStart() {
-  // the dart crossed the first (chamber) barrel sensor
-  if (glitchReject(PIN_BARREL_START)) {
-    // good signal.  note the start time
-    timeBarrelStart = micros();
+  //debug_barrelStart = true;
+  if (barrelIRQState == BARREL_START) {
+    unsigned long time = micros();
+    if (time > (timeBarrelStart + BARREL_INTER_DART_TIME_US)) {
+      // rising edge = new dart, and it's been long enough that it's not a glitch
+      timeBarrelStart = time;
+      barrelIRQState = BARREL_END;
+      //debug_barrelStart_glitch = true;
+    }
   }
 }
 
 void irqBarrelEnd() {
-  // the dart crossed the last (muzzle) barrel sensor
-  if (glitchReject(PIN_BARREL_END)) {
-    // good signal.  note the end time, and set the display update flag
-    timeBarrelEnd = micros();
-    timeBarrelEndFlag = true;
+  //debug_barrelEnd = true;
+  if (barrelIRQState == BARREL_END) {
+    unsigned long time = micros();
+    if (time > (timeBarrelStart + BARREL_DART_TIME_US)) {
+      // falling edge = end of the dart, and it's been long enough that it's not a glitch
+      timeBarrelEnd = time;
+      timeBarrelEndFlag = true;
+      barrelIRQState = BARREL_START;
+      //debug_barrelEnd_glitch = true;
+    }
   }
 }
 
-int magTypeRead() {
-  int magType = 0;
-  if (!digitalRead(PIN_MAGTYPE_BIT0)) {magType |= 1;}
-  if (!digitalRead(PIN_MAGTYPE_BIT1)) {magType |= 2;}
-  if (!digitalRead(PIN_MAGTYPE_BIT2)) {magType |= 4;}
-  if (!digitalRead(PIN_MAGTYPE_BIT3)) {magType |= 8;}
-  return magType;
+
+//////// user Interface ////////
+
+#define UI_SCREEN_HUD         0
+#define UI_SCREEN_DIAGNOSTIC  1
+
+#define BUTTON_UP_BIT           1
+#define BUTTON_DOWN_BIT         2
+#define BUTTON_SELECT_BIT       4
+#define BUTTON_BACK_BIT         8
+
+uint8_t UIMode = UI_SCREEN_HUD;
+
+uint8_t buttonBitsOld1 = 0;
+uint8_t buttonBitsOld2 = 0;
+
+// UI buttons
+uint8_t buttonRead() {
+  uint8_t buttonBits = GPIO_UI.readGPIO();
+  buttonBits = (~buttonBits) & 0x0f;
+  //return flipLowNibble(bits);
+  return buttonBits;
 }
 
+boolean buttonUnpackUp(uint8_t buttonBits) { return buttonBits & BUTTON_UP_BIT; }
+boolean buttonUnpackDown(uint8_t buttonBits) { return buttonBits & BUTTON_DOWN_BIT; }
+boolean buttonUnpackSelect(uint8_t buttonBits) { return buttonBits & BUTTON_SELECT_BIT; }
+boolean buttonUnpackBack(uint8_t buttonBits) { return buttonBits & BUTTON_BACK_BIT; }
+
+boolean buttonRisingEdge(uint8_t buttonBits, uint8_t buttonBitMask) {
+  if ((!(buttonBitsOld2 & buttonBitMask)) &&
+      (buttonBitsOld1 & buttonBitMask) &&
+      (buttonBits & buttonBitMask)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void buttonUpdateHistory(uint8_t buttonBits) {
+  buttonBitsOld2 = buttonBitsOld1;
+  buttonBitsOld1 = buttonBits;
+}
+
+
+//////// motor control ////////
 
 void plungerMotorPWM(int dir, int pwm) {
   int dirFwd, dirRev;
@@ -251,10 +347,15 @@ void plungerMotorInit(void) {
 }
 
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println(" NerfComp: RapidStrike CS-18 ver 0.5");
+//////// setup ////////
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 
+
+void setup() {
   // Setup the pins and interrupts for the barrel photo interrupters
   pinMode(PIN_BARREL_START, INPUT);
   attachInterrupt(digitalPinToInterrupt(PIN_BARREL_START), irqBarrelStart, RISING);
@@ -262,26 +363,35 @@ void setup() {
   pinMode(PIN_BARREL_END, INPUT);
   attachInterrupt(digitalPinToInterrupt(PIN_BARREL_END), irqBarrelEnd, RISING);
 
-  // Setup the pins for magazine type sensors and jam door sensor
-  pinMode(PIN_MAGTYPE_BIT0, INPUT);
-  pinMode(PIN_MAGTYPE_BIT1, INPUT);
-  pinMode(PIN_MAGTYPE_BIT2, INPUT);
-  pinMode(PIN_MAGTYPE_BIT3, INPUT);
-
-  
+  // Setup the pins for internal sensing
   pinMode(PIN_MAGSWITCH, INPUT_PULLUP);
   pinMode(PIN_REVTRIGGER, INPUT_PULLUP);
   pinMode(PIN_JAMDOOR, INPUT_PULLUP);
-
-  
   pinMode(PIN_TRIGGER, INPUT_PULLUP);
   pinMode(PIN_PLUNGER_END, INPUT_PULLUP);
+
+  // init the port expanders for mag type and HUD buttons
+  GPIO_mag.begin(0);      // GPIO magazine is on address 0
+  GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
+  for (int i = 0; i < 8; ++i) {
+    GPIO_mag.pinMode(i, INPUT);
+    GPIO_mag.pullUp(i, HIGH);  // turn on a 100K pullup internally
+    GPIO_UI.pinMode(i, INPUT);
+    GPIO_UI.pullUp(i, HIGH);  // turn on a 100K pullup internally
+  }
+
+
 
   plungerMotorInit();
 
   // init the servo
   servoESC.attach(PIN_FLYWHEEL_MOTOR_ESC); // attaches the servo on pin 9 to the servo object
   servoESC.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);
+
+  // init the serial port for debugging output
+  Serial.begin(115200);
+  Serial.println(" NerfComp: RapidStrike ver 0.5");
+  Serial.print(F("   Free RAM:")); Serial.print(freeRam()); Serial.println(F(" bytes"));
 
   // init the LED Display
   // generate the high voltage from the 3.3v line internally! (neat!)
@@ -291,7 +401,6 @@ void setup() {
   display.clearDisplay();
   display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
   display.display();
-
 
   // show the screen for a while
   delay(2000);
@@ -375,8 +484,11 @@ void loop() {
       heartbeatPrintTime += HEARTBEAT_PRINT_PERIOD;
       p = true;
     }
-    p = false;
+    //p = false;
     if (p) {Serial.print("hb ");}
+    if (p) {Serial.print("  magbits="); Serial.print(GPIO_mag.readGPIO(), HEX); }
+    if (p) {Serial.print("  uibits="); Serial.print(GPIO_UI.readGPIO(), HEX); }
+
     if (p) {Serial.print("  rounds="); Serial.print(roundCount, DEC); }
 
 

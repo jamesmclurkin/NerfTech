@@ -34,22 +34,22 @@
 		<link>
 			<name>core/core</name>
 			<type>2</type>
-			<location>C:/Dev/sloeber/arduinoPlugin/packages/arduino/hardware/avr/1.6.14/cores/arduino</location>
+			<location>C:/dev/eclipseArduino/arduinoPlugin/packages/arduino/hardware/avr/1.6.11/cores/arduino</location>
 		</link>
 		<link>
 			<name>core/variant</name>
 			<type>2</type>
-			<location>C:/Dev/sloeber/arduinoPlugin/packages/arduino/hardware/avr/1.6.14/variants/eightanaloginputs</location>
+			<location>C:/dev/eclipseArduino/arduinoPlugin/packages/arduino/hardware/avr/1.6.11/variants/eightanaloginputs</location>
 		</link>
 		<link>
 			<name>libraries/SPI</name>
 			<type>2</type>
-			<location>C:/Dev/sloeber/arduinoPlugin/packages/arduino/hardware/avr/1.6.14/libraries/SPI</location>
+			<location>C:/dev/eclipseArduino/arduinoPlugin/packages/arduino/hardware/avr/1.6.11/libraries/SPI</location>
 		</link>
 		<link>
 			<name>libraries/Wire</name>
 			<type>2</type>
-			<location>C:/Dev/sloeber/arduinoPlugin/packages/arduino/hardware/avr/1.6.14/libraries/Wire</location>
+			<location>C:/dev/eclipseArduino/arduinoPlugin/packages/arduino/hardware/avr/1.6.11/libraries/Wire</location>
 		</link>
 	</linkedResources>
 </projectDescription>
