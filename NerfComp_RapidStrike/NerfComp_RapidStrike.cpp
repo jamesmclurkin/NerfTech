@@ -11,7 +11,7 @@
 #include <avr/pgmspace.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-//#define SCREEN_ENABLE
+#define SCREEN_ENABLE
 
 #define OLED_RESET 4
 #ifdef SCREEN_ENABLE
@@ -21,17 +21,40 @@ Adafruit_SSD1306 display(OLED_RESET);
 #include "SevenSegmentBitmaps.h"
 #include "NerfLogo.h"
 
+//#define ARDUINO_NANO
+#define ARDUINO_PROMICRO
+
+#ifdef ARDUINO_NANO
 #define PIN_BARREL_START            2
 #define PIN_BARREL_END              3
-#define PIN_MAGSWITCH               4
-#define PIN_REVTRIGGER              5
-#define PIN_JAMDOOR                 6
-#define PIN_TRIGGER                 12
-#define PIN_PLUNGER_END             10
-#define PIN_VOLTAGE_BATTERY         A7
+#define PIN_SAFETY_JAMDOOR          6
+#define PIN_SAFETY_MAG              4
+#define PIN_FLYWHEEL_ESC            9
+#define PIN_FLYWHEEL_TRIGGER        5
+
+#define PIN_BATTERY_VOLTAGE         A7
+#define PIN_PLUNGER_TRIGGER         12
 #define PIN_PLUNGER_MOTOR_FWD       7
 #define PIN_PLUNGER_MOTOR_REV       8
+#define PIN_PLUNGER_END_SWITCH      10
 #define PIN_PLUNGER_MOTOR_PWM       11
+#endif
+
+#ifdef ARDUINO_PROMICRO
+#define PIN_BARREL_START            1
+#define PIN_BARREL_END              0
+#define PIN_SAFETY_JAMDOOR          4
+#define PIN_SAFETY_MAG              5
+#define PIN_FLYWHEEL_ESC            6
+#define PIN_FLYWHEEL_TRIGGER        7
+
+#define PIN_BATTERY_VOLTAGE         A0
+#define PIN_PLUNGER_TRIGGER         15
+#define PIN_PLUNGER_MOTOR_FWD       14
+#define PIN_PLUNGER_MOTOR_REV       16
+#define PIN_PLUNGER_END_SWITCH      10
+#define PIN_PLUNGER_MOTOR_PWM       9
+#endif
 
 #define VOLTAGE_BATTERY_SCALER      (1/65.8)
 #define VOLTAGE_BATTERY_IIR_GAIN    0.01
@@ -41,7 +64,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define MOTOR_DIR_BRAKE             2
 #define MOTOR_DIR_OFF               3
 
-#define PIN_FLYWHEEL_MOTOR_ESC      9
 
 #define PLUNGER_STATE_IDLE              0
 #define PLUNGER_STATE_FLYWHEEL_REVUP    1
@@ -147,23 +169,23 @@ Adafruit_MCP23008 GPIO_mag;
 Adafruit_MCP23008 GPIO_UI;
 
 boolean magazineSwitchRead() {
-  return !digitalRead(PIN_MAGSWITCH);
+  return !digitalRead(PIN_SAFETY_MAG);
 }
 
 boolean revTriggerRead() {
-  return !digitalRead(PIN_REVTRIGGER);
+  return !digitalRead(PIN_FLYWHEEL_TRIGGER);
 }
 
 boolean jamDoorRead() {
-  return !digitalRead(PIN_JAMDOOR);
+  return !digitalRead(PIN_SAFETY_JAMDOOR);
 }
 
 boolean triggerRead() {
-  return !digitalRead(PIN_TRIGGER);
+  return !digitalRead(PIN_PLUNGER_TRIGGER);
 }
 
 boolean plungerEndRead() {
-  return !digitalRead(PIN_PLUNGER_END);
+  return !digitalRead(PIN_PLUNGER_END_SWITCH);
 }
 
 uint8_t flipLowNibble(uint8_t val) {
@@ -367,11 +389,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PIN_BARREL_END), irqBarrelEnd, RISING);
 
   // Setup the pins for internal sensing
-  pinMode(PIN_MAGSWITCH, INPUT_PULLUP);
-  pinMode(PIN_REVTRIGGER, INPUT_PULLUP);
-  pinMode(PIN_JAMDOOR, INPUT_PULLUP);
-  pinMode(PIN_TRIGGER, INPUT_PULLUP);
-  pinMode(PIN_PLUNGER_END, INPUT_PULLUP);
+  pinMode(PIN_SAFETY_MAG, INPUT_PULLUP);
+  pinMode(PIN_FLYWHEEL_TRIGGER, INPUT_PULLUP);
+  pinMode(PIN_SAFETY_JAMDOOR, INPUT_PULLUP);
+  pinMode(PIN_PLUNGER_TRIGGER, INPUT_PULLUP);
+  pinMode(PIN_PLUNGER_END_SWITCH, INPUT_PULLUP);
 
   // init the port expanders for mag type and HUD buttons
   GPIO_mag.begin(0);      // GPIO magazine is on address 0
@@ -388,7 +410,7 @@ void setup() {
   plungerMotorInit();
 
   // init the servo
-  servoESC.attach(PIN_FLYWHEEL_MOTOR_ESC); // attaches the servo on pin 9 to the servo object
+  servoESC.attach(PIN_FLYWHEEL_ESC); // attaches the servo on pin 9 to the servo object
   servoESC.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);
 
   // init the serial port for debugging output
@@ -499,7 +521,7 @@ void loop() {
 
 
     // update the motor voltage
-    int voltageMotorRaw = analogRead(PIN_VOLTAGE_BATTERY);
+    int voltageMotorRaw = analogRead(PIN_BATTERY_VOLTAGE);
     float voltageMotorTemp = (float) voltageMotorRaw * VOLTAGE_BATTERY_SCALER;
 
     if (p) {Serial.print("  vmot="); Serial.print(voltageMotorRaw, DEC); }
