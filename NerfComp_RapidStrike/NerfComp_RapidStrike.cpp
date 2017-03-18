@@ -12,6 +12,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCREEN_ENABLE
+#define SCREEN_GPIO_ENABLE
+//#define MAG_GPIO_ENABLE
 
 #define OLED_RESET 4
 #ifdef SCREEN_ENABLE
@@ -165,8 +167,12 @@ unsigned long heartbeatPrintTime = 0;
 Servo servoESC;
 
 // GPIO Port expander for mag type and screen UI
+#ifdef MAG_GPIO_ENABLE
 Adafruit_MCP23008 GPIO_mag;
+#endif
+#ifdef SCREEN_UI_ENABLE
 Adafruit_MCP23008 GPIO_UI;
+#endif
 
 boolean magazineSwitchRead() {
   return !digitalRead(PIN_SAFETY_MAG);
@@ -199,7 +205,11 @@ uint8_t flipLowNibble(uint8_t val) {
 
 // magazine bits
 uint8_t magBitsRead() {
+#ifdef MAG_GPIO_ENABLE
   uint8_t bits = GPIO_mag.readGPIO();
+#else
+  uint8_t bits = 0xFF;
+#endif
   bits = ((~bits) >> 4) & 0x0f;
   return flipLowNibble(bits);
 }
@@ -318,7 +328,11 @@ uint8_t buttonBitsOld2 = 0;
 
 // UI buttons
 uint8_t buttonRead() {
+#ifdef SCREEN_UI_ENABLE
   uint8_t buttonBits = GPIO_UI.readGPIO();
+#else
+  uint8_t buttonBits = 0xFF;
+#endif
   buttonBits = (~buttonBits) & 0x0f;
   //return flipLowNibble(bits);
   return buttonBits;
@@ -396,15 +410,20 @@ void setup() {
   pinMode(PIN_PLUNGER_END_SWITCH, INPUT_PULLUP);
 
   // init the port expanders for mag type and HUD buttons
+#ifdef MAG_GPIO_ENABLE
   GPIO_mag.begin(0);      // GPIO magazine is on address 0
-  GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
   for (int i = 0; i < 8; ++i) {
     GPIO_mag.pinMode(i, INPUT);
     GPIO_mag.pullUp(i, HIGH);  // turn on a 100K pullup internally
+  }
+#endif
+#ifdef SCREEN_UI_ENABLE
+  GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
+  for (int i = 0; i < 8; ++i) {
     GPIO_UI.pinMode(i, INPUT);
     GPIO_UI.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
-
+#endif
 
 
   plungerMotorInit();
@@ -514,9 +533,12 @@ void loop() {
     }
     //p = false;
     if (p) {Serial.print("hb ");}
+#ifdef MAG_GPIO_ENABLE
     if (p) {Serial.print("  magbits="); Serial.print(GPIO_mag.readGPIO(), HEX); }
+#endif
+#ifdef SCREEN_UI_ENABLE
     if (p) {Serial.print("  uibits="); Serial.print(GPIO_UI.readGPIO(), HEX); }
-
+#endif
     if (p) {Serial.print("  rounds="); Serial.print(roundCount, DEC); }
 
 
