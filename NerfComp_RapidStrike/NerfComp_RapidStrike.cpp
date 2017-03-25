@@ -11,7 +11,11 @@
 #include <avr/pgmspace.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SCREEN_ENABLE
+#define ARDUINO_NANO
+//#define ARDUINO_PROMICRO
+
+                                                                                
+//#define SCREEN_ENABLE
 #define SCREEN_GPIO_ENABLE
 //#define MAG_GPIO_ENABLE
 
@@ -23,8 +27,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 #include "SevenSegmentBitmaps.h"
 #include "NerfLogo.h"
 
-//#define ARDUINO_NANO
-#define ARDUINO_PROMICRO
+#define ARDUINO_NANO
+//#define ARDUINO_PROMICRO
 
 #ifdef ARDUINO_NANO
 #define PIN_BARREL_START            2
@@ -170,7 +174,7 @@ Servo servoESC;
 #ifdef MAG_GPIO_ENABLE
 Adafruit_MCP23008 GPIO_mag;
 #endif
-#ifdef SCREEN_UI_ENABLE
+#ifdef SCREEN_GPIO_ENABLE
 Adafruit_MCP23008 GPIO_UI;
 #endif
 
@@ -328,7 +332,7 @@ uint8_t buttonBitsOld2 = 0;
 
 // UI buttons
 uint8_t buttonRead() {
-#ifdef SCREEN_UI_ENABLE
+#ifdef SCREEN_GPIO_ENABLE
   uint8_t buttonBits = GPIO_UI.readGPIO();
 #else
   uint8_t buttonBits = 0xFF;
@@ -417,7 +421,7 @@ void setup() {
     GPIO_mag.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
 #endif
-#ifdef SCREEN_UI_ENABLE
+#ifdef SCREEN_GPIO_ENABLE
   GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
   for (int i = 0; i < 8; ++i) {
     GPIO_UI.pinMode(i, INPUT);
@@ -536,7 +540,7 @@ void loop() {
 #ifdef MAG_GPIO_ENABLE
     if (p) {Serial.print("  magbits="); Serial.print(GPIO_mag.readGPIO(), HEX); }
 #endif
-#ifdef SCREEN_UI_ENABLE
+#ifdef SCREEN_GPIO_ENABLE
     if (p) {Serial.print("  uibits="); Serial.print(GPIO_UI.readGPIO(), HEX); }
 #endif
     if (p) {Serial.print("  rounds="); Serial.print(roundCount, DEC); }
