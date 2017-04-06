@@ -241,7 +241,7 @@ void irqBarrelEnd() {
 Adafruit_SSD1306 display(OLED_RESET);
 #endif
 
-uint8_t UIMode = UI_SCREEN_HUD;
+uint8_t UIMode = UI_SCREEN_CONFIG;
 
 uint8_t buttonBits = 0;
 uint8_t buttonBitsOld1 = 0;
@@ -469,7 +469,7 @@ void loop() {
       heartbeatPrintTime += HEARTBEAT_PRINT_PERIOD;
       p = true;
     }
-    //p = false;
+    p = false;
     if (p) {Serial.print(F("hb "));}
 #ifdef MAG_GPIO_ENABLE
     if (p) {Serial.print(F("  magbits=")); Serial.print(GPIO_mag.readGPIO(), HEX); }
@@ -694,13 +694,68 @@ void printBit(uint8_t bit) {
   }
 }
 
-void displayPrint_F(Adafruit_SSD1306 d, const char * str) {
+#define SCREEN_BUFFER_SIZE  40
+//void displayPrint_F(Adafruit_SSD1306 d, const char * str) {
+void displayPrint_P(const char * str) {
   char c;
+  //char buffer[SCREEN_BUFFER_SIZE];
+
   if (!str)
     return;
-  while ((c = pgm_read_byte(str++))) {
-    d.print(c);
+//  strcpy_P(buffer, str);
+//  d.print(buffer);
+  while ((c = pgm_read_byte(str++)))
+    display.print(c);
+}
+
+boolean pd = true;
+
+#define SCREEN_UNDERLINE_POS  8
+//const __FlashStringHelper *
+void screenDrawTitle(const char * title) {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  // draw scren title
+  display.setCursor(0, 0);
+  displayPrint_P(title);
+  display.drawLine(0, SCREEN_UNDERLINE_POS, display.width() - 1, SCREEN_UNDERLINE_POS, WHITE);
+  display.setCursor(0, SCREEN_UNDERLINE_POS+2);
+}
+
+
+void displayScreenConfig() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  // draw scren title
+  display.setCursor(0, 0);
+  display.print(F("System Config"));
+  display.drawLine(0, SCREEN_UNDERLINE_POS, display.width() - 1, SCREEN_UNDERLINE_POS, WHITE);
+  display.setCursor(0, SCREEN_UNDERLINE_POS+2);
+
+  //screenDrawTitle(display, (const char *)F("System Config"));
+  uint8_t i;
+  uint8_t paramCount = sizeof(configParams)/sizeof(ConfigParam);
+  if (pd){ Serial.print(F("paramCount=")); Serial.print(paramCount, DEC); Serial.println(F(""));}
+  for(i = 0; i < paramCount; i++) {
+    displayPrint_P((const char*)&configParams[i].name);
+    //displayPrint_P(display, (const char*)F("       Rev speed"));
+    display.print(F(":"));
+    display.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
+    display.println(F(""));
+
+    if (pd) {
+    //SerialPrint_F((const char*)F("       Rev speed"));
+    SerialPrint_F((const char*)&configParams[i].name);
+    Serial.print(F(":"));
+    Serial.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
+    Serial.println(F(""));
+    }
   }
+  display.display();
+  pd = false;
 }
 
 
@@ -709,7 +764,7 @@ void displayScreenDiag() {
   display.setTextSize(1);
   display.setTextColor(BLACK, WHITE); // 'inverted' text
   display.setCursor(0, 0);
-  display.print(F("  System Diagonstic  "));
+  display.print(F("System Diagonstic  "));
 
   display.setTextColor(WHITE);
   display.print(F("Volt=")); display.println(voltageBatteryAvg, 1);
@@ -723,30 +778,11 @@ void displayScreenDiag() {
     printBit(bitRead(bits, 2));
     printBit(bitRead(bits, 3));
     display.print(F("="));
-    displayPrint_F(display, magazineTypes[magazineTypeIdx].name); display.println(F(""));
+    displayPrint_P(magazineTypes[magazineTypeIdx].name); display.println(F(""));
   display.print(F("Barrel=")); printBit(barrelRead()); display.println(F(""));
   display.display();
 }
 
-void displayScreenConfig() {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(BLACK, WHITE); // 'inverted' text
-  display.setCursor(0, 0);
-  display.print(F("  System Config      "));
-
-  display.setTextColor(WHITE);
-  uint8_t i;
-  uint8_t paramCount = sizeof(configParams)/sizeof(ConfigParam);
-  for(i = 0; i < paramCount; i++) {
-    //displayPrint_F(display, configParams[i].name);
-    display.print(F("       Rev speed"));
-    display.print(F(":"));
-    display.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
-    display.println(F(""));
-  }
-  display.display();
-}
 
 #define POSX_SEVEN_SEG_DIGIT_0  66
 #define POSX_SEVEN_SEG_DIGIT_1  98
@@ -762,7 +798,7 @@ void displayScreenHUD() {
   display.println(F("Rapid"));
   display.setTextSize(1);
   display.print(F("Mag:"));
-  displayPrint_F(display, magazineTypes[magazineTypeIdx].name); display.println(F(""));
+  displayPrint_P(magazineTypes[magazineTypeIdx].name); display.println(F(""));
   display.print(F("Rd/m:"));
   if (roundsPerMin > 0) {
     display.println(roundsPerMin, DEC);
