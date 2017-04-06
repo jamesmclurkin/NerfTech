@@ -9,7 +9,6 @@
 #include <Servo.h>
 #include <avr/pgmspace.h>
 
-////////////////////////////////////////////////////////////////////////////////
 #define ARDUINO_NANO
 //#define ARDUINO_PROMICRO
 
@@ -17,157 +16,7 @@
 #define SCREEN_GPIO_ENABLE
 #define MAG_GPIO_ENABLE
 
-#define OLED_RESET 4
-#ifdef SCREEN_ENABLE
-Adafruit_SSD1306 display(OLED_RESET);
-#endif
-
-//#include "SevenSegmentBitmaps.h"
-#include <SevenSegmentBitmaps.h>
-#include <NerfLogo.h>
-
-
-#define ARDUINO_NANO
-//#define ARDUINO_PROMICRO
-
-#ifdef ARDUINO_NANO
-#define PIN_BARREL_START            2
-#define PIN_BARREL_END              3
-#define PIN_SAFETY_JAMDOOR          6
-#define PIN_SAFETY_MAG              4
-#define PIN_FLYWHEEL_ESC            9
-#define PIN_FLYWHEEL_TRIGGER        5
-
-#define PIN_BATTERY_VOLTAGE         A7
-#define PIN_PLUNGER_TRIGGER         12
-#define PIN_PLUNGER_MOTOR_FWD       7
-#define PIN_PLUNGER_MOTOR_REV       8
-#define PIN_PLUNGER_END_SWITCH      10
-#define PIN_PLUNGER_MOTOR_PWM       11
-#endif
-
-#ifdef ARDUINO_PROMICRO
-#define PIN_BARREL_START            1
-#define PIN_BARREL_END              0
-#define PIN_SAFETY_JAMDOOR          4
-#define PIN_SAFETY_MAG              5
-#define PIN_FLYWHEEL_ESC            6
-#define PIN_FLYWHEEL_TRIGGER        7
-
-#define PIN_BATTERY_VOLTAGE         A0
-#define PIN_PLUNGER_TRIGGER         15
-#define PIN_PLUNGER_MOTOR_FWD       14
-#define PIN_PLUNGER_MOTOR_REV       16
-#define PIN_PLUNGER_END_SWITCH      10
-#define PIN_PLUNGER_MOTOR_PWM       9
-#endif
-
-//#define VOLTAGE_BATTERY_SCALER      (1/65.8)
-#define VOLTAGE_BATTERY_SCALER      (1/68.5)
-#define VOLTAGE_BATTERY_IIR_GAIN    0.002
-
-#define MOTOR_DIR_FWD               0
-#define MOTOR_DIR_REV               1
-#define MOTOR_DIR_BRAKE             2
-#define MOTOR_DIR_OFF               3
-
-
-#define PLUNGER_STATE_IDLE              0
-#define PLUNGER_STATE_FLYWHEEL_REVUP    1
-#define PLUNGER_STATE_CLEAR_END_SWITCH  2
-#define PLUNGER_STATE_RUN_PLUNGER       3
-#define PLUNGER_STATE_ROUND_DELAY       4
-#define PLUNGER_STATE_WAIT_FOR_TRIGGGER_RELEASE 5
-
-//#define PLUNGER_PWM_RUN_SPEED           145
-#define PLUNGER_PWM_RUN_SPEED           120
-#define PLUNGER_PWM_MAX                 255
-
-#define TRIGGER_DELAY_TIME              10
-#define ROUND_DELAY_TIME                10
-#define FLYWHEEL_REVUP_TIME_SEMI        500
-#define FLYWHEEL_REVUP_TIME_FULL        300
-#define FLYWHEEL_REVDOWN_TIME_FULL      2000
-
-#define FLYWHEEL_MOTOR_ESC_NEUTRAL      90
-#define FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL 96
-#define FLYWHEEL_MOTOR_ESC_REVUP        160
-#define FLYWHEEL_MOTOR_ESC_RUN          140
-#define FLYWHEEL_MOTOR_ESC_BRAKE        15
-
-#define VELOCITY_FPS_MIN                20.0
-#define VELOCITY_FPS_MAX                400.0
-#define DART_LENGTH_INCHES              2.85
-
-#define HEARTBEAT_UPDATE_PERIOD         50
-#define HEARTBEAT_PRINT_PERIOD          250
-
-#define VOLTAGE_MIN         0.0
-#define VOLTAGE_MAX         15.0
-
-#define MAGTYPE_EMPTY     0
-#define MAGTYPE_CLIP_6    1
-#define MAGTYPE_CLIP_10   4
-#define MAGTYPE_CLIP_12   2
-#define MAGTYPE_CLIP_15   3
-#define MAGTYPE_CLIP_18   8
-#define MAGTYPE_DRUM_18   9
-#define MAGTYPE_DRUM_25   10
-#define MAGTYPE_DRUM_35   12
-#define MAGTYPE_UNKNOWN   16
-
-
-#define MAGAZINE_TYPE_DELAY     3
-#define MAGAZINE_NAME_SIZE  7
-
-typedef struct MagazineType {
-  const uint8_t code;
-  const char name[MAGAZINE_NAME_SIZE];
-  const uint8_t capacity;
-} MagazineType;
-
-//const MagazineType magEmpty PROGMEM = {MAGTYPE_EMPTY, "----", -1};
-//const MagazineType magClip6 PROGMEM = {MAGTYPE_CLIP_6,  "Clip6", 6};
-//const MagazineType magClip10 PROGMEM = {MAGTYPE_CLIP_10, "Clip10", 10};
-//const MagazineType magClip12 PROGMEM = {MAGTYPE_CLIP_12, "Clip12", 12};
-//const MagazineType magClip15 PROGMEM = {MAGTYPE_CLIP_15, "Clip15", 15};
-//const MagazineType magClip18 PROGMEM = {MAGTYPE_CLIP_18, "Clip18", 18 };
-//const MagazineType magDrum18 PROGMEM = {MAGTYPE_DRUM_18, "Drum18", 18};
-//const MagazineType magDrum25 PROGMEM = {MAGTYPE_DRUM_25, "Drum25", 25 };
-//const MagazineType magDrum35 PROGMEM = {MAGTYPE_DRUM_35, "Drum35", 35 };
-//const MagazineType magUnknown PROGMEM = {MAGTYPE_UNKNOWN, "????", 10 };
-//
-//const MagazineType* const magazineTypes[] PROGMEM = {
-//  &magEmpty,
-//  &magClip6,
-//  &magClip10,
-//  &magClip12,
-//  &magClip15,
-//  &magClip18,
-//  &magDrum18,
-//  &magDrum25,
-//  &magDrum35,
-//  &magUnknown,
-//};
-
-const MagazineType magazineTypes[] PROGMEM = {
-    {MAGTYPE_EMPTY,   "----", -1},
-    {MAGTYPE_CLIP_6,  "Clip6", 6},
-    {MAGTYPE_CLIP_10, "Clip10", 10},
-    {MAGTYPE_CLIP_12, "Clip12", 12},
-    {MAGTYPE_CLIP_15, "Clip15", 15},
-    {MAGTYPE_CLIP_18, "Clip18", 18 },
-    {MAGTYPE_DRUM_18, "Drum18", 18},
-    {MAGTYPE_DRUM_25, "Drum25", 25 },
-    {MAGTYPE_DRUM_35, "Drum35", 35 },
-    {MAGTYPE_UNKNOWN, "????", 10 }
-};
-
-
-#define DISPLAY_UPDATE_PERIOD 100
-
-#define SET_PLUNGER_STATE(s)  plungerState = s;plungerStateTime = millis();sp=true
-#define STATE_DELAY(t)      ((millis() - plungerStateTime) > t)
+#include <NerfComp.h>
 
 
 // global variables for main system stats
@@ -194,6 +43,27 @@ unsigned long heartbeatPrintTime = 0;
 // create a servo object to control the flywheel ESC
 Servo servoESC;
 
+typedef struct MagazineType {
+  const uint8_t code;
+  const char name[MAGAZINE_NAME_SIZE];
+  const uint8_t capacity;
+} MagazineType;
+
+
+const MagazineType magazineTypes[] PROGMEM = {
+    {MAGTYPE_EMPTY,   "----", -1},
+    {MAGTYPE_CLIP_6,  "Clip6", 6},
+    {MAGTYPE_CLIP_10, "Clip10", 10},
+    {MAGTYPE_CLIP_12, "Clip12", 12},
+    {MAGTYPE_CLIP_15, "Clip15", 15},
+    {MAGTYPE_CLIP_18, "Clip18", 18 },
+    {MAGTYPE_DRUM_18, "Drum18", 18},
+    {MAGTYPE_DRUM_25, "Drum25", 25 },
+    {MAGTYPE_DRUM_35, "Drum35", 35 },
+    {MAGTYPE_UNKNOWN, "????", 10 }
+};
+
+
 // GPIO Port expander for mag type and screen UI
 #ifdef MAG_GPIO_ENABLE
 Adafruit_MCP23008 GPIO_mag;
@@ -202,25 +72,42 @@ Adafruit_MCP23008 GPIO_mag;
 Adafruit_MCP23008 GPIO_UI;
 #endif
 
-boolean magazineSwitchRead() {
-  return !digitalRead(PIN_SAFETY_MAG);
-}
+#define CONFIG_PARAM_NAME_SIZE 17
 
-boolean revTriggerRead() {
-  return !digitalRead(PIN_FLYWHEEL_TRIGGER);
-}
+typedef struct ConfigParam {
+  const char name[CONFIG_PARAM_NAME_SIZE];
+  const int16_t valueDefault;
+  const int16_t valueMin;
+  const int16_t valueMax;
+  const int16_t valueStep;
+} ConfigParam;
 
-boolean jamDoorRead() {
-  return !digitalRead(PIN_SAFETY_JAMDOOR);
-}
+const ConfigParam configParams[] PROGMEM = {
+    //012345678901234567890
+  //("  System Config  XXXX"));
+    {"       Rev speed", FLYWHEEL_MOTOR_ESC_RUN,  100,  200, 5 },
+    {"   Rev time semi", FLYWHEEL_REVUP_TIME_SEMI,  0, 1000, 50},
+    {"   Rev time full", FLYWHEEL_REVUP_TIME_FULL,  0, 1000, 50},
+    {"   Plunger speed", PLUNGER_PWM_RUN_SPEED,    50,  250, 5 },
+};
 
-boolean triggerRead() {
-  return !digitalRead(PIN_PLUNGER_TRIGGER);
-}
 
-boolean plungerEndRead() {
-  return !digitalRead(PIN_PLUNGER_END_SWITCH);
-}
+//#define
+
+
+//////// I/O wrappers ////////
+
+boolean magazineSwitchRead() {return !digitalRead(PIN_SAFETY_MAG); }
+
+boolean revTriggerRead() {return !digitalRead(PIN_FLYWHEEL_TRIGGER); }
+
+boolean jamDoorRead() {return !digitalRead(PIN_SAFETY_JAMDOOR); }
+
+boolean triggerRead() {return !digitalRead(PIN_PLUNGER_TRIGGER); }
+
+boolean plungerEndRead() {return !digitalRead(PIN_PLUNGER_END_SWITCH); }
+
+boolean barrelRead() {return digitalRead(PIN_BARREL_START); }
 
 uint8_t flipLowNibble(uint8_t val) {
   uint8_t rval = 0;
@@ -262,6 +149,7 @@ uint8_t magazineTypeLookup(int magTypeBits) {
   } while (true);
   return typeIdx;
 }
+
 
 //#define GLITCH_CHECKS 4
 //
@@ -341,35 +229,40 @@ void irqBarrelEnd() {
 
 #define UI_SCREEN_HUD         0
 #define UI_SCREEN_DIAGNOSTIC  1
+#define UI_SCREEN_CONFIG      2
 
-#define BUTTON_UP_BIT           1
-#define BUTTON_DOWN_BIT         2
-#define BUTTON_SELECT_BIT       4
-#define BUTTON_BACK_BIT         8
+#define BUTTON_UP_BIT           0x04
+#define BUTTON_DOWN_BIT         0x01
+#define BUTTON_SELECT_BIT       0x02
+#define BUTTON_BACK_BIT         0x80
+
+#define OLED_RESET 4
+#ifdef SCREEN_ENABLE
+Adafruit_SSD1306 display(OLED_RESET);
+#endif
 
 uint8_t UIMode = UI_SCREEN_HUD;
 
+uint8_t buttonBits = 0;
 uint8_t buttonBitsOld1 = 0;
 uint8_t buttonBitsOld2 = 0;
 
 // UI buttons
-uint8_t buttonRead() {
+void buttonRead() {
 #ifdef SCREEN_GPIO_ENABLE
-  uint8_t buttonBits = GPIO_UI.readGPIO();
+  buttonBits = GPIO_UI.readGPIO();
 #else
-  uint8_t buttonBits = 0xFF;
+  buttonBits = 0xFF;
 #endif
-  buttonBits = (~buttonBits) & 0x0f;
-  //return flipLowNibble(bits);
-  return buttonBits;
+  buttonBits = ~buttonBits;
 }
 
-boolean buttonUnpackUp(uint8_t buttonBits) { return buttonBits & BUTTON_UP_BIT; }
-boolean buttonUnpackDown(uint8_t buttonBits) { return buttonBits & BUTTON_DOWN_BIT; }
-boolean buttonUnpackSelect(uint8_t buttonBits) { return buttonBits & BUTTON_SELECT_BIT; }
-boolean buttonUnpackBack(uint8_t buttonBits) { return buttonBits & BUTTON_BACK_BIT; }
+//boolean buttonUnpackUp(uint8_t buttonBits) { return buttonBits & BUTTON_UP_BIT; }
+//boolean buttonUnpackDown(uint8_t buttonBits) { return buttonBits & BUTTON_DOWN_BIT; }
+//boolean buttonUnpackSelect(uint8_t buttonBits) { return buttonBits & BUTTON_SELECT_BIT; }
+//boolean buttonUnpackBack(uint8_t buttonBits) { return buttonBits & BUTTON_BACK_BIT; }
 
-boolean buttonRisingEdge(uint8_t buttonBits, uint8_t buttonBitMask) {
+boolean buttonRisingEdge(uint8_t buttonBitMask) {
   if ((!(buttonBitsOld2 & buttonBitMask)) &&
       (buttonBitsOld1 & buttonBitMask) &&
       (buttonBits & buttonBitMask)) {
@@ -379,7 +272,7 @@ boolean buttonRisingEdge(uint8_t buttonBits, uint8_t buttonBitMask) {
   }
 }
 
-void buttonUpdateHistory(uint8_t buttonBits) {
+void buttonUpdateHistory(void) {
   buttonBitsOld2 = buttonBitsOld1;
   buttonBitsOld1 = buttonBits;
 }
@@ -419,7 +312,7 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-void SerialPrint_P (const char * str) {
+void SerialPrint_F (const char * str) {
   char c;
   if (!str)
     return;
@@ -600,7 +493,6 @@ void loop() {
     }
 
 
-
     // check the magazine type
     uint8_t magazineTypeTemp = magTypeReadBits();
     if (p) {Serial.print(F("  mag=")); Serial.print(magazineTypeTemp, DEC); }
@@ -617,12 +509,12 @@ void loop() {
           roundsJamCount = 0;
           magazineNew = false;
           Serial.println(F("")); Serial.print(F("(new magazine "));
-          SerialPrint_P(magazineTypes[magazineTypeIdx].name); Serial.println(F(")"));
+          SerialPrint_F(magazineTypes[magazineTypeIdx].name); Serial.println(F(")"));
         }
       }
     }
     magazineType = magazineTypeTemp;
-    if (p) {Serial.print(F(",")); SerialPrint_P(magazineTypes[magazineTypeIdx].name);}
+    if (p) {Serial.print(F(",")); SerialPrint_F(magazineTypes[magazineTypeIdx].name);}
 
 
     // check the jam door
@@ -645,13 +537,38 @@ void loop() {
       jamDoorOpen = false;
     }
 
-
 //    if (p) {Serial.print(F(" mag=")); Serial.print(magazineSwitchRead());}
 //    if (p) {Serial.print(F(" revTrig=")); Serial.print(revTriggerRead());}
 //    if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
 //    if (p) {Serial.print(F(" trig=")); Serial.print(triggerRead());}
 //    if (p) {Serial.print(F(" plunger=")); Serial.print(plungerEndRead());}
-  }
+
+    // check the UI buttons
+    buttonRead();
+    switch (UIMode) {
+    case UI_SCREEN_HUD:
+      if (buttonRisingEdge(BUTTON_SELECT_BIT)) {
+        UIMode = UI_SCREEN_DIAGNOSTIC;
+      }
+      break;
+    case UI_SCREEN_DIAGNOSTIC:
+      if (buttonRisingEdge(BUTTON_SELECT_BIT)) {
+        UIMode = UI_SCREEN_CONFIG;
+      }
+      if (buttonRisingEdge(BUTTON_BACK_BIT)) {
+        UIMode = UI_SCREEN_HUD;
+      }
+      break;
+    case UI_SCREEN_CONFIG:
+      if (buttonRisingEdge(BUTTON_BACK_BIT)) {
+        UIMode = UI_SCREEN_DIAGNOSTIC;
+      }
+      break;
+    default:
+        break;
+    }
+    buttonUpdateHistory();
+}
 
   //if (magazineSwitchRead() && jamDoorRead()) {
   // Safety switches are ok.  process the rev and fire triggers
@@ -763,28 +680,94 @@ void loop() {
   }
 }
 
+
+//////// Display ////////
+
+void printBit(uint8_t bit) {
+  if (bit) {
+    display.setTextColor(BLACK, WHITE); // 'inverted' text
+    display.print(F("1"));
+    display.setTextColor(WHITE);
+  } else {
+    display.setTextColor(WHITE);
+    display.print(F("0"));
+  }
+}
+
+void displayPrint_F(Adafruit_SSD1306 d, const char * str) {
+  char c;
+  if (!str)
+    return;
+  while ((c = pgm_read_byte(str++))) {
+    d.print(c);
+  }
+}
+
+
+void displayScreenDiag() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(BLACK, WHITE); // 'inverted' text
+  display.setCursor(0, 0);
+  display.print(F("  System Diagonstic  "));
+
+  display.setTextColor(WHITE);
+  display.print(F("Volt=")); display.println(voltageBatteryAvg, 1);
+  display.print(F("SW:Rev=")); printBit(revTriggerRead()); display.print(F(" "));
+  display.print(F("Jam=")); printBit(jamDoorRead()); display.print(F(" "));
+  display.print(F("Mag=")); printBit(magazineSwitchRead()); display.println(F(""));
+  display.print(F("MagBits="));
+    uint8_t bits = magTypeReadBits();
+    printBit(bitRead(bits, 0));
+    printBit(bitRead(bits, 1));
+    printBit(bitRead(bits, 2));
+    printBit(bitRead(bits, 3));
+    display.print(F("="));
+    displayPrint_F(display, magazineTypes[magazineTypeIdx].name); display.println(F(""));
+  display.print(F("Barrel=")); printBit(barrelRead()); display.println(F(""));
+  display.display();
+}
+
+void displayScreenConfig() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(BLACK, WHITE); // 'inverted' text
+  display.setCursor(0, 0);
+  display.print(F("  System Config      "));
+
+  display.setTextColor(WHITE);
+  uint8_t i;
+  uint8_t paramCount = sizeof(configParams)/sizeof(ConfigParam);
+  for(i = 0; i < paramCount; i++) {
+    //displayPrint_F(display, configParams[i].name);
+    display.print(F("       Rev speed"));
+    display.print(F(":"));
+    display.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
+    display.println(F(""));
+  }
+  display.display();
+}
+
 #define POSX_SEVEN_SEG_DIGIT_0  66
 #define POSX_SEVEN_SEG_DIGIT_1  98
 #define POSY_SEVEN_SEG_DIGIT  12
 
-void displayUpdate() {
+void displayScreenHUD() {
 #ifdef SCREEN_ENABLE
   // Draw the HUD Display
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
   display.setTextSize(2);
-  display.println("Rapid");
+  display.println(F("Rapid"));
   display.setTextSize(1);
   display.print(F("Mag:"));
-  //TODO progmem debugging
-  //display.println(magazineTypePtr->name);
+  displayPrint_F(display, magazineTypes[magazineTypeIdx].name); display.println(F(""));
   display.print(F("Rd/m:"));
   if (roundsPerMin > 0) {
     display.println(roundsPerMin, DEC);
   } else {
     display.println(F("---"));
-
   }
   display.print(F("Ft/s:"));
   if (velocity >= 0.0) {
@@ -818,10 +801,21 @@ void displayUpdate() {
       (uint8_t *) &(SevenSegmentBitMaps[digit1]),
       SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
 
-  // draw dividing lines
-//  display.drawLine(POSX_SEVEN_SEG_DIGIT_0 - 3, 0,
-//  POSX_SEVEN_SEG_DIGIT_0 - 3, display.height() - 1, WHITE);
-
   display.display();
 #endif
+}
+
+void displayUpdate() {
+  switch (UIMode) {
+  case UI_SCREEN_CONFIG:
+    displayScreenConfig();
+    break;
+  case UI_SCREEN_DIAGNOSTIC:
+    displayScreenDiag();
+    break;
+  default:
+  case UI_SCREEN_HUD:
+    displayScreenHUD();
+    break;
+  }
 }

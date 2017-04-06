@@ -696,6 +696,10 @@
 		<Unit filename="../libraries/Adafruit_MCP23008/Adafruit_MCP23008.h" />
 		<Unit filename="../libraries/Adafruit_SSD1306/Adafruit_SSD1306.cpp" />
 		<Unit filename="../libraries/Adafruit_SSD1306/Adafruit_SSD1306.h" />
+		<Unit filename="../libraries/NerfComp/NerfComp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../libraries/NerfComp/NerfComp.h" />
 		<Unit filename="../libraries/NerfComp/NerfLogo.h" />
 		<Unit filename="../libraries/NerfComp/SevenSegmentBitmaps.h" />
 		<Unit filename="NerfComp_RapidStrike.ino">
