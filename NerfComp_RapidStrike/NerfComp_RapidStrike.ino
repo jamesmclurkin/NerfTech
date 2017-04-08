@@ -89,10 +89,9 @@ const ConfigParam configParams[] PROGMEM = {
     {"   Rev time semi", FLYWHEEL_REVUP_TIME_SEMI,  0, 1000, 50},
     {"   Rev time full", FLYWHEEL_REVUP_TIME_FULL,  0, 1000, 50},
     {"   Plunger speed", PLUNGER_PWM_RUN_SPEED,    50,  250, 5 },
+    {"     Dart sength", DART_LENGTH_MM,           10,  200, 5 },
+    {"Reset to default", 0,                         0,    1, 1 },
 };
-
-
-//#define
 
 
 //////// I/O wrappers ////////
@@ -230,11 +229,7 @@ void irqBarrelEnd() {
 #define UI_SCREEN_HUD         0
 #define UI_SCREEN_DIAGNOSTIC  1
 #define UI_SCREEN_CONFIG      2
-
-#define BUTTON_UP_BIT           0x04
-#define BUTTON_DOWN_BIT         0x01
-#define BUTTON_SELECT_BIT       0x02
-#define BUTTON_BACK_BIT         0x80
+#define UI_SCREEN_CONFIG_EDIT 3
 
 #define OLED_RESET 4
 #ifdef SCREEN_ENABLE
@@ -243,26 +238,53 @@ Adafruit_SSD1306 display(OLED_RESET);
 
 uint8_t UIMode = UI_SCREEN_CONFIG;
 
-uint8_t buttonBits = 0;
+
+#define BUTTON_BIT_SELECT       0x02
+#define BUTTON_BIT_BACK         0x80
+#define BUTTON_BIT_UP           0x04
+#define BUTTON_BIT_DOWN         0x01
+
+#define BUTTON_EVENT_NULL           0
+#define BUTTON_EVENT_SHORT_SELECT   1
+#define BUTTON_EVENT_SHORT_BACK     2
+#define BUTTON_EVENT_SHORT_UP       3
+#define BUTTON_EVENT_SHORT_DOWN     4
+
+#define BUTTON_EVENT_LONG_SELECT    10
+
+#define BUTTON_EVENT_RELEASE_SELECT 20
+
 uint8_t buttonBitsOld1 = 0;
 uint8_t buttonBitsOld2 = 0;
+uint8_t buttonEvent = BUTTON_EVENT_NULL;
 
 // UI buttons
-void buttonRead() {
-#ifdef SCREEN_GPIO_ENABLE
-  buttonBits = GPIO_UI.readGPIO();
-#else
-  buttonBits = 0xFF;
-#endif
-  buttonBits = ~buttonBits;
-}
-
 //boolean buttonUnpackUp(uint8_t buttonBits) { return buttonBits & BUTTON_UP_BIT; }
 //boolean buttonUnpackDown(uint8_t buttonBits) { return buttonBits & BUTTON_DOWN_BIT; }
 //boolean buttonUnpackSelect(uint8_t buttonBits) { return buttonBits & BUTTON_SELECT_BIT; }
 //boolean buttonUnpackBack(uint8_t buttonBits) { return buttonBits & BUTTON_BACK_BIT; }
 
-boolean buttonRisingEdge(uint8_t buttonBitMask) {
+uint8_t _buttonRead() {
+  uint8_t buttonBits;
+#ifdef SCREEN_GPIO_ENABLE
+  buttonBits = ~GPIO_UI.readGPIO();
+#else
+  buttonBits = 0x00;
+#endif
+  return buttonBits;
+}
+
+void buttonEventAdd(uint8_t e) {
+  buttonEvent = e;
+}
+
+uint8_t buttonEventGet(void) {
+  uint8_t val = buttonEvent;
+  buttonEvent = BUTTON_EVENT_NULL;
+  return val;
+}
+
+boolean buttonRisingEdge(uint8_t buttonBits, uint8_t buttonBitMask) {
   if ((!(buttonBitsOld2 & buttonBitMask)) &&
       (buttonBitsOld1 & buttonBitMask) &&
       (buttonBits & buttonBitMask)) {
@@ -272,10 +294,16 @@ boolean buttonRisingEdge(uint8_t buttonBitMask) {
   }
 }
 
-void buttonUpdateHistory(void) {
+void buttonUpdateEvents(void) {
+  uint8_t buttonBits = _buttonRead();
   buttonBitsOld2 = buttonBitsOld1;
   buttonBitsOld1 = buttonBits;
+  if (buttonRisingEdge(buttonBits, BUTTON_BIT_SELECT)) {buttonEventAdd(BUTTON_EVENT_SHORT_SELECT);}
+  if (buttonRisingEdge(buttonBits, BUTTON_BIT_BACK))   {buttonEventAdd(BUTTON_EVENT_SHORT_BACK);}
+  if (buttonRisingEdge(buttonBits, BUTTON_BIT_UP))     {buttonEventAdd(BUTTON_EVENT_SHORT_UP);}
+  if (buttonRisingEdge(buttonBits, BUTTON_BIT_DOWN))   {buttonEventAdd(BUTTON_EVENT_SHORT_DOWN);}
 }
+
 
 
 //////// motor control ////////
@@ -537,37 +565,15 @@ void loop() {
       jamDoorOpen = false;
     }
 
+    // read the UI Buttons
+    buttonUpdateEvents();
+
 //    if (p) {Serial.print(F(" mag=")); Serial.print(magazineSwitchRead());}
 //    if (p) {Serial.print(F(" revTrig=")); Serial.print(revTriggerRead());}
 //    if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
 //    if (p) {Serial.print(F(" trig=")); Serial.print(triggerRead());}
 //    if (p) {Serial.print(F(" plunger=")); Serial.print(plungerEndRead());}
 
-    // check the UI buttons
-    buttonRead();
-    switch (UIMode) {
-    case UI_SCREEN_HUD:
-      if (buttonRisingEdge(BUTTON_SELECT_BIT)) {
-        UIMode = UI_SCREEN_DIAGNOSTIC;
-      }
-      break;
-    case UI_SCREEN_DIAGNOSTIC:
-      if (buttonRisingEdge(BUTTON_SELECT_BIT)) {
-        UIMode = UI_SCREEN_CONFIG;
-      }
-      if (buttonRisingEdge(BUTTON_BACK_BIT)) {
-        UIMode = UI_SCREEN_HUD;
-      }
-      break;
-    case UI_SCREEN_CONFIG:
-      if (buttonRisingEdge(BUTTON_BACK_BIT)) {
-        UIMode = UI_SCREEN_DIAGNOSTIC;
-      }
-      break;
-    default:
-        break;
-    }
-    buttonUpdateHistory();
 }
 
   //if (magazineSwitchRead() && jamDoorRead()) {
@@ -708,10 +714,9 @@ void displayPrint_P(const char * str) {
     display.print(c);
 }
 
-boolean pd = true;
-
 #define SCREEN_UNDERLINE_POS  8
-//const __FlashStringHelper *
+#define SCREEN_CONFIG_ROWS 3
+
 void screenDrawTitle(const char * title) {
   display.clearDisplay();
   display.setTextSize(1);
@@ -724,39 +729,109 @@ void screenDrawTitle(const char * title) {
   display.setCursor(0, SCREEN_UNDERLINE_POS+2);
 }
 
+int8_t selectIdx = 0;
+int8_t scrollIdx = 0;
+boolean p = true;
 
 void displayScreenConfig() {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  // draw scren title
-  display.setCursor(0, 0);
-  display.print(F("System Config"));
-  display.drawLine(0, SCREEN_UNDERLINE_POS, display.width() - 1, SCREEN_UNDERLINE_POS, WHITE);
-  display.setCursor(0, SCREEN_UNDERLINE_POS+2);
+//  display.clearDisplay();
+//  display.setTextSize(1);
+//  display.setTextColor(WHITE);
+//  // draw scren title
+//  display.setCursor(0, 0);
+//  display.print(F("System Config"));
+//  display.drawLine(0, SCREEN_UNDERLINE_POS, display.width() - 1, SCREEN_UNDERLINE_POS, WHITE);
+//  display.setCursor(0, SCREEN_UNDERLINE_POS+2);
 
-  //screenDrawTitle(display, (const char *)F("System Config"));
-  uint8_t i;
+  // check the buttons
   uint8_t paramCount = sizeof(configParams)/sizeof(ConfigParam);
-  if (pd){ Serial.print(F("paramCount=")); Serial.print(paramCount, DEC); Serial.println(F(""));}
-  for(i = 0; i < paramCount; i++) {
-    displayPrint_P((const char*)&configParams[i].name);
-    //displayPrint_P(display, (const char*)F("       Rev speed"));
-    display.print(F(":"));
-    display.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
-    display.println(F(""));
-
-    if (pd) {
-    //SerialPrint_F((const char*)F("       Rev speed"));
-    SerialPrint_F((const char*)&configParams[i].name);
-    Serial.print(F(":"));
-    Serial.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
-    Serial.println(F(""));
+  int8_t highlightPos = selectIdx - scrollIdx;
+  switch (buttonEventGet()) {
+  case BUTTON_EVENT_SHORT_SELECT: {
+    //select the parameter unter the curcur for editing
+    UIMode = UI_SCREEN_CONFIG_EDIT;
+    break;
+    }
+  case BUTTON_EVENT_SHORT_BACK: {
+    //Go back to disg screen
+    UIMode = UI_SCREEN_DIAGNOSTIC;
+    break;
+    }
+  case BUTTON_EVENT_SHORT_UP: {
+    // prev parameter or increase value
+    if (selectIdx > 0) {
+      selectIdx--;
+      highlightPos = selectIdx - scrollIdx;
+      if (highlightPos < 0) {
+        scrollIdx--;
+        highlightPos = selectIdx - scrollIdx;
+      }
+    }
+    p = true;
+    break;
+    }
+  case BUTTON_EVENT_SHORT_DOWN: {
+    // next parameter or decrease value
+    if (selectIdx < (paramCount - 1)) {
+      selectIdx++;
+      highlightPos = selectIdx - scrollIdx;
+      if (highlightPos >= SCREEN_CONFIG_ROWS) {
+        scrollIdx++;
+        highlightPos = selectIdx - scrollIdx;
+      }
+    }
+    p = true;
+    break;
     }
   }
+
+  screenDrawTitle((const char *)F("System Config"));
+
+  if (p) {
+  Serial.print(F(" paramCount=")); Serial.print(paramCount, DEC);
+  Serial.print(F(" selectIdx=")); Serial.print(selectIdx, DEC);
+  Serial.print(F(" scrollIdx=")); Serial.print(scrollIdx, DEC);
+  Serial.print(F(" highlightPos=")); Serial.print(highlightPos, DEC);
+  Serial.println(F(""));
+  p = false;
+  }
+
+  //Compute which screen line to highlight
+  for(uint8_t i = 0; i < SCREEN_CONFIG_ROWS; i++) {
+    if (i == highlightPos) {
+      display.setTextColor(BLACK, WHITE); // 'inverted' text
+    } else {
+      display.setTextColor(WHITE);
+    }
+    displayPrint_P((const char*)&configParams[scrollIdx + i].name);
+    //displayPrint_P(display, (const char*)F("       Rev speed"));
+    display.print(F(":"));
+    display.print((int16_t)pgm_read_word(&configParams[scrollIdx + i].valueDefault), DEC);
+    display.println(F(""));
+  }
   display.display();
-  pd = false;
 }
+
+//    // check the UI buttons
+//    switch (UIMode) {
+//    case UI_SCREEN_HUD:
+//      if (buttonRisingEdge(BUTTON_BIT_SELECT)) {
+//        UIMode = UI_SCREEN_DIAGNOSTIC;
+//      }
+//      break;
+//    case UI_SCREEN_DIAGNOSTIC:
+//      if (buttonRisingEdge(BUTTON_BIT_SELECT)) {
+//        UIMode = UI_SCREEN_CONFIG;
+//      }
+//      if (buttonRisingEdge(BUTTON_BIT_BACK)) {
+//        UIMode = UI_SCREEN_HUD;
+//      }
+//      break;
+//    case UI_SCREEN_CONFIG:
+//      break;
+//    default:
+//        break;
+//    }
 
 
 void displayScreenDiag() {
@@ -844,6 +919,7 @@ void displayScreenHUD() {
 void displayUpdate() {
   switch (UIMode) {
   case UI_SCREEN_CONFIG:
+  case UI_SCREEN_CONFIG_EDIT:
     displayScreenConfig();
     break;
   case UI_SCREEN_DIAGNOSTIC:
