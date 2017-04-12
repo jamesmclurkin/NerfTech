@@ -89,16 +89,18 @@ typedef struct ConfigParam {
 #define PARAM_FLYWHEEL_REVUP_TIME_FULL  2
 #define PARAM_PLUNGER_PWM_RUN_SPEED     3
 #define PARAM_DART_LENGTH_MM            4
-#define PARAM_RESET_ALL                 5
+#define PARAM_DISPLAY_DIM               5
+#define PARAM_RESET_ALL                 6
 
 const ConfigParam configParams[] PROGMEM = {
     //012345678901234567890
-  //("  System Config  XXXX"));
+  //("   System Config:XXXX"));
     {"       Rev speed", FLYWHEEL_MOTOR_ESC_RUN,  100,  200, 5 },
     {"   Rev time semi", FLYWHEEL_REVUP_TIME_SEMI,  0, 1000, 50},
     {"   Rev time full", FLYWHEEL_REVUP_TIME_FULL,  0, 1000, 50},
     {"   Plunger speed", PLUNGER_PWM_RUN_SPEED,    50,  250, 5 },
     {"     Dart sength", DART_LENGTH_MM,           10,  200, 1 },
+    {"     Display dim", 0,                         0,    1, 1 },
     {"Reset to default", 0,                         0,    1, 1 },
 };
 
@@ -614,9 +616,9 @@ void loop() {
     displayUpdateEnable = false;
     unsigned long revTime;
     if (revTriggerRead()) {
-      revTime = FLYWHEEL_REVUP_TIME_FULL;
+      revTime = paramRead(PARAM_FLYWHEEL_REVUP_TIME_FULL);
     } else {
-      revTime = FLYWHEEL_REVUP_TIME_SEMI;
+      revTime = paramRead(PARAM_FLYWHEEL_REVUP_TIME_SEMI);
     }
     if (STATE_DELAY(revTime)) {
       SET_PLUNGER_STATE(PLUNGER_STATE_CLEAR_END_SWITCH);
@@ -625,8 +627,8 @@ void loop() {
   }
   case PLUNGER_STATE_CLEAR_END_SWITCH: {
     if (sp) {Serial.println(F(" s:clear")); sp = false;}
-    plungerMotorPWM(MOTOR_DIR_FWD, PLUNGER_PWM_RUN_SPEED);
-    ESCPos = FLYWHEEL_MOTOR_ESC_RUN;
+    plungerMotorPWM(MOTOR_DIR_FWD, paramRead(PARAM_PLUNGER_PWM_RUN_SPEED));
+    ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
     displayUpdateEnable = false;
     if (!plungerEndRead()) {
       SET_PLUNGER_STATE(PLUNGER_STATE_RUN_PLUNGER);
@@ -636,8 +638,8 @@ void loop() {
   }
   case PLUNGER_STATE_RUN_PLUNGER: {
     if (sp) {Serial.println(F(" s:run")); sp = false;}
-    plungerMotorPWM(MOTOR_DIR_FWD, PLUNGER_PWM_RUN_SPEED);
-    ESCPos = FLYWHEEL_MOTOR_ESC_RUN;
+    plungerMotorPWM(MOTOR_DIR_FWD, paramRead(PARAM_PLUNGER_PWM_RUN_SPEED));
+    ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
     displayUpdateEnable = false;
     if (plungerEndRead() && STATE_DELAY(25)) {
       // plunger is at end.  stop it if we're in semi-auto
@@ -654,7 +656,7 @@ void loop() {
     if (sp) {Serial.println(F(" s:delay")); sp = false;}
     plungerMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
     // full auto.  leave the flywheel spinning
-    ESCPos = FLYWHEEL_MOTOR_ESC_RUN;
+    ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
     displayUpdateEnable = false;
     if ((millis() - plungerStateTime) > ROUND_DELAY_TIME) {
       //displayUpdateForce = true;
@@ -712,7 +714,6 @@ void printBit(uint8_t bit) {
   }
 }
 
-#define SCREEN_BUFFER_SIZE  40
 //void displayPrint_F(Adafruit_SSD1306 d, const char * str) {
 void displayPrint_P(const char * str) {
   char c;
@@ -727,7 +728,7 @@ void displayPrint_P(const char * str) {
 }
 
 #define SCREEN_UNDERLINE_POS  8
-#define SCREEN_CONFIG_ROWS 3
+#define SCREEN_CONFIG_ROWS 6
 
 void screenDrawTitle(const char * title) {
   display.clearDisplay();
@@ -749,8 +750,6 @@ int16_t paramMin;
 int16_t paramMax;
 int16_t paramStep;
 
-boolean p = true;
-
 int16_t paramRead(uint8_t paramIdx) {
   uint16_t val;
   val = (uint16_t)EEPROM.read(paramIdx * sizeof(int16_t));
@@ -766,39 +765,35 @@ int16_t paramWrite(uint8_t paramIdx, int16_t val) {
   }
 }
 
-void paramInit(void) {
-  paramCount = sizeof(configParams)/sizeof(ConfigParam);
-  //if (paramRead(PARAM_RESET_ALL) != 0) {
-    // parameters need to be initialiszed or reset.  Copy default values over.
+void paramDefaultCheck(void) {
+  if (paramRead(PARAM_RESET_ALL) != 0) {
+    // parameters need to be initialiszed or reset.
+    // Copy default values from flash.
     for(uint8_t i = 0; i < paramCount; i++) {
       paramWrite(i, (int16_t)pgm_read_word(&configParams[i].valueDefault));
 
-      Serial.print(F(" paramInit:"));
+      Serial.print(F(" param:"));
       SerialPrint_F((const char*)&configParams[i].name);
       Serial.print(F(" default="));
       Serial.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
       Serial.print(F(" read="));
       Serial.println(paramRead(i), DEC);
     }
-  //}
+  }
+}
+
+void paramInit(void) {
+  paramCount = sizeof(configParams)/sizeof(ConfigParam);
+  paramDefaultCheck();
 }
 
 void displayScreenConfig() {
-//  display.clearDisplay();
-//  display.setTextSize(1);
-//  display.setTextColor(WHITE);
-//  // draw scren title
-//  display.setCursor(0, 0);
-//  display.print(F("System Config"));
-//  display.drawLine(0, SCREEN_UNDERLINE_POS, display.width() - 1, SCREEN_UNDERLINE_POS, WHITE);
-//  display.setCursor(0, SCREEN_UNDERLINE_POS+2);
-
   // check the buttons
   int8_t highlightPos = selectIdx - scrollIdx;
   switch (buttonEventGet()) {
   case BUTTON_EVENT_SHORT_SELECT: {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
-      paramWrite(selectIdx, paramTemp);
+      paramDefaultCheck();
       UIMode = UI_SCREEN_CONFIG;
     } else {
       //select the parameter unter the curcur for editing
@@ -811,9 +806,9 @@ void displayScreenConfig() {
     break;
     }
   case BUTTON_EVENT_SHORT_BACK: {
-    //Go back to disg screen
+    //Go back to menu screen
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
-      paramWrite(selectIdx, paramTemp);
+      paramDefaultCheck();
       UIMode = UI_SCREEN_CONFIG;
     } else {
       UIMode = UI_SCREEN_DIAGNOSTIC;
@@ -827,6 +822,7 @@ void displayScreenConfig() {
       if (paramTemp > paramMax) {
         paramTemp = paramMax;
       }
+      paramWrite(selectIdx, paramTemp);
     } else {
       // prev parameter
       if (selectIdx > 0) {
@@ -838,7 +834,6 @@ void displayScreenConfig() {
         }
       }
     }
-    p = true;
     break;
     }
   case BUTTON_EVENT_SHORT_DOWN: {
@@ -848,6 +843,7 @@ void displayScreenConfig() {
       if (paramTemp < paramMin) {
         paramTemp = paramMin;
       }
+      paramWrite(selectIdx, paramTemp);
     } else {
       // next parameter
       if (selectIdx < (paramCount - 1)) {
@@ -859,20 +855,11 @@ void displayScreenConfig() {
         }
       }
     }
-    p = true;
     break;
     }
   }
 
-  if (p) {
-    Serial.print(F(" paramCount=")); Serial.print(paramCount, DEC);
-    Serial.print(F(" selectIdx=")); Serial.print(selectIdx, DEC);
-    Serial.print(F(" paramTemp=")); Serial.print(paramTemp, DEC);
-    Serial.println(F(""));
-    p = false;
-  }
-
-
+  // draw the config screen
   screenDrawTitle((const char *)F("System Config"));
   for(uint8_t i = 0; i < SCREEN_CONFIG_ROWS; i++) {
     //Compute which screen line to highlight
@@ -882,7 +869,6 @@ void displayScreenConfig() {
       display.setTextColor(WHITE);
     }
     displayPrint_P((const char*)&configParams[scrollIdx + i].name);
-    //displayPrint_P(display, (const char*)F("       Rev speed"));
     display.print(F(":"));
 
     int16_t paramPrint;
@@ -897,7 +883,6 @@ void displayScreenConfig() {
       display.setTextColor(WHITE);
       paramPrint = paramRead(scrollIdx + i);
     }
-    //display.print((int16_t)pgm_read_word(&configParams[scrollIdx + i].valueDefault), DEC);
     display.print(paramPrint, DEC);
     if(paramPrint < 1000) {display.print(F(" "));}
     if(paramPrint < 100) {display.print(F(" "));}
@@ -907,38 +892,28 @@ void displayScreenConfig() {
   display.display();
 }
 
-//    // check the UI buttons
-//    switch (UIMode) {
-//    case UI_SCREEN_HUD:
-//      if (buttonRisingEdge(BUTTON_BIT_SELECT)) {
-//        UIMode = UI_SCREEN_DIAGNOSTIC;
-//      }
-//      break;
-//    case UI_SCREEN_DIAGNOSTIC:
-//      if (buttonRisingEdge(BUTTON_BIT_SELECT)) {
-//        UIMode = UI_SCREEN_CONFIG;
-//      }
-//      if (buttonRisingEdge(BUTTON_BIT_BACK)) {
-//        UIMode = UI_SCREEN_HUD;
-//      }
-//      break;
-//    case UI_SCREEN_CONFIG:
-//      break;
-//    default:
-//        break;
-//    }
-
 
 void displayScreenDiag() {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(BLACK, WHITE); // 'inverted' text
-  display.setCursor(0, 0);
-  display.print(F("System Diagonstic  "));
+  switch (buttonEventGet()) {
+  case BUTTON_EVENT_SHORT_SELECT: {
+    //advance to config screen
+    UIMode = UI_SCREEN_CONFIG;
+    break;
+    }
+  case BUTTON_EVENT_SHORT_BACK: {
+    //Go back to menu screen
+    UIMode = UI_SCREEN_HUD;
+    break;
+    }
+  }
 
-  display.setTextColor(WHITE);
+  // draw screen
+  screenDrawTitle((const char *)F("System Diagonstic"));
+
   display.print(F("Volt=")); display.println(voltageBatteryAvg, 1);
-  display.print(F("SW:Rev=")); printBit(revTriggerRead()); display.print(F(" "));
+  display.print(F("Rev=")); printBit(revTriggerRead()); display.print(F(" "));
+  display.print(F("Tgr=")); printBit(triggerRead()); display.print(F(" "));
+  display.print(F("Brl=")); printBit(barrelRead()); display.println(F(""));
   display.print(F("Jam=")); printBit(jamDoorRead()); display.print(F(" "));
   display.print(F("Mag=")); printBit(magazineSwitchRead()); display.println(F(""));
   display.print(F("MagBits="));
@@ -949,7 +924,6 @@ void displayScreenDiag() {
     printBit(bitRead(bits, 3));
     display.print(F("="));
     displayPrint_P(magazineTypes[magazineTypeIdx].name); display.println(F(""));
-  display.print(F("Barrel=")); printBit(barrelRead()); display.println(F(""));
   display.display();
 }
 
@@ -960,6 +934,14 @@ void displayScreenDiag() {
 
 void displayScreenHUD() {
 #ifdef SCREEN_ENABLE
+  switch (buttonEventGet()) {
+  case BUTTON_EVENT_SHORT_SELECT: {
+    //advance to config screen
+    UIMode = UI_SCREEN_DIAGNOSTIC;
+    break;
+    }
+  }
+
   // Draw the HUD Display
   display.clearDisplay();
   display.setTextColor(WHITE);
@@ -1012,6 +994,8 @@ void displayScreenHUD() {
 }
 
 void displayUpdate() {
+  display.dim(paramRead(PARAM_DISPLAY_DIM));
+
   switch (UIMode) {
   case UI_SCREEN_CONFIG:
   case UI_SCREEN_CONFIG_EDIT:
