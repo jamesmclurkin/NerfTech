@@ -107,17 +107,17 @@ const ConfigParam configParams[] PROGMEM = {
 
 //////// I/O wrappers ////////
 
-boolean magazineSwitchRead() {return !digitalRead(PIN_SAFETY_MAG); }
+boolean switchMagSafetyRead() {return !digitalRead(PIN_SAFETY_MAG); }
 
-boolean revTriggerRead() {return !digitalRead(PIN_FLYWHEEL_TRIGGER); }
+boolean switchRevTriggerRead() {return !digitalRead(PIN_FLYWHEEL_TRIGGER); }
 
-boolean jamDoorRead() {return !digitalRead(PIN_SAFETY_JAMDOOR); }
+boolean switchJamDoorRead() {return !digitalRead(PIN_SAFETY_JAMDOOR); }
 
-boolean triggerRead() {return !digitalRead(PIN_PLUNGER_TRIGGER); }
+boolean switchTriggerRead() {return !digitalRead(PIN_PLUNGER_TRIGGER); }
 
-boolean plungerEndRead() {return !digitalRead(PIN_PLUNGER_END_SWITCH); }
+boolean switchPlungerStopRead() {return !digitalRead(PIN_PLUNGER_END_SWITCH); }
 
-boolean barrelRead() {return digitalRead(PIN_BARREL_START); }
+boolean sensorBarrelRead() {return digitalRead(PIN_BARREL_START); }
 
 uint8_t flipLowNibble(uint8_t val) {
   uint8_t rval = 0;
@@ -130,7 +130,7 @@ uint8_t flipLowNibble(uint8_t val) {
 
 uint8_t magTypeReadBits() {
   uint8_t magTypeBits = MAGTYPE_EMPTY;
-  if (magazineSwitchRead()) {
+  if (switchMagSafetyRead()) {
     #ifdef MAG_GPIO_ENABLE
     magTypeBits = GPIO_mag.readGPIO();
     #else
@@ -200,21 +200,21 @@ uint8_t magazineTypeLookup(int magTypeBits) {
 //  }
 //}
 
-#define BARREL_START                0
-#define BARREL_END                  1
-#define BARREL_INTER_DART_TIME_US   10000L
-#define BARREL_DART_TIME_US         1000L
+#define BARREL_STATE_START                  0
+#define BARREL_STATE_END                    1
+#define BARREL_TIME_DART_INTERVAL_MAX_US    10000L
+#define BARREL_TIME_DART_LENGTH_MAX_US      1000L
 
-volatile uint8_t barrelIRQState = BARREL_START;
+volatile uint8_t barrelIRQState = BARREL_STATE_START;
 
 void irqBarrelStart() {
   //debug_barrelStart = true;
-  if (barrelIRQState == BARREL_START) {
+  if (barrelIRQState == BARREL_STATE_START) {
     unsigned long time = micros();
-    if (time > (timeBarrelStart + BARREL_INTER_DART_TIME_US)) {
+    if (time > (timeBarrelStart + BARREL_TIME_DART_INTERVAL_MAX_US)) {
       // rising edge = new dart, and it's been long enough that it's not a glitch
       timeBarrelStart = time;
-      barrelIRQState = BARREL_END;
+      barrelIRQState = BARREL_STATE_END;
       //debug_barrelStart_glitch = true;
     }
   }
@@ -222,13 +222,13 @@ void irqBarrelStart() {
 
 void irqBarrelEnd() {
   //debug_barrelEnd = true;
-  if (barrelIRQState == BARREL_END) {
+  if (barrelIRQState == BARREL_STATE_END) {
     unsigned long time = micros();
-    if (time > (timeBarrelStart + BARREL_DART_TIME_US)) {
+    if (time > (timeBarrelStart + BARREL_TIME_DART_LENGTH_MAX_US)) {
       // falling edge = end of the dart, and it's been long enough that it's not a glitch
       timeBarrelEnd = time;
       timeBarrelEndFlag = true;
-      barrelIRQState = BARREL_START;
+      barrelIRQState = BARREL_STATE_START;
       //debug_barrelEnd_glitch = true;
     }
   }
@@ -268,12 +268,6 @@ uint8_t UIMode = UI_SCREEN_CONFIG;
 uint8_t buttonBitsOld1 = 0;
 uint8_t buttonBitsOld2 = 0;
 uint8_t buttonEvent = BUTTON_EVENT_NULL;
-
-// UI buttons
-//boolean buttonUnpackUp(uint8_t buttonBits) { return buttonBits & BUTTON_UP_BIT; }
-//boolean buttonUnpackDown(uint8_t buttonBits) { return buttonBits & BUTTON_DOWN_BIT; }
-//boolean buttonUnpackSelect(uint8_t buttonBits) { return buttonBits & BUTTON_SELECT_BIT; }
-//boolean buttonUnpackBack(uint8_t buttonBits) { return buttonBits & BUTTON_BACK_BIT; }
 
 uint8_t _buttonRead() {
   uint8_t buttonBits;
@@ -424,16 +418,6 @@ void setup() {
   // force an update to show  the initial data display
   displayUpdate();
 
-#define MAG_TYPE_TEST 5
-
-//  Serial.print(F("Mag type Test:"));
-//  SerialPrint_P(magazineTypes[MAG_TYPE_TEST].name);
-//  Serial.print(F(","));
-//  Serial.print(magazineTypes[MAG_TYPE_TEST].capacity, DEC);
-//  Serial.print(F(","));
-//  Serial.print(pgm_read_byte(&magazineTypes[MAG_TYPE_TEST].capacity), DEC);
-//  Serial.println(F(""));
-
   // reset the heartbeat time to avoid a bunch of initial updates
   heartbeatUpdateTime = millis();
   heartbeatPrintTime = heartbeatUpdateTime;
@@ -561,7 +545,7 @@ void loop() {
 
     // check the jam door
     if ((magazineType != MAGTYPE_EMPTY) && (magazineTypeCounter == MAGAZINE_TYPE_DELAY)) {
-      boolean jamDoorOpenTemp = jamDoorRead();
+      boolean jamDoorOpenTemp = switchJamDoorRead();
       if (p) {Serial.print(F(" jamdoor=")); Serial.print(jamDoorOpenTemp);}
       if (jamDoorOpen != jamDoorOpenTemp) {
         if (jamDoorOpenTemp) {
@@ -599,12 +583,12 @@ void loop() {
   case PLUNGER_STATE_IDLE: {
     if (sp) {Serial.println(F("")); Serial.println(F(" s:idle")); sp = false; }
     plungerMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
-    if (revTriggerRead()) {
+    if (switchRevTriggerRead()) {
       ESCPos = FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL;
     } else {
       ESCPos = FLYWHEEL_MOTOR_ESC_BRAKE;
     }
-    if (triggerRead() && STATE_DELAY(TRIGGER_DELAY_TIME)) {
+    if (switchTriggerRead() && STATE_DELAY(TRIGGER_DELAY_TIME)) {
       SET_PLUNGER_STATE(PLUNGER_STATE_FLYWHEEL_REVUP);
     }
     break;
@@ -615,7 +599,7 @@ void loop() {
     ESCPos = FLYWHEEL_MOTOR_ESC_REVUP;
     displayUpdateEnable = false;
     unsigned long revTime;
-    if (revTriggerRead()) {
+    if (switchRevTriggerRead()) {
       revTime = paramRead(PARAM_FLYWHEEL_REVUP_TIME_FULL);
     } else {
       revTime = paramRead(PARAM_FLYWHEEL_REVUP_TIME_SEMI);
@@ -630,7 +614,7 @@ void loop() {
     plungerMotorPWM(MOTOR_DIR_FWD, paramRead(PARAM_PLUNGER_PWM_RUN_SPEED));
     ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
     displayUpdateEnable = false;
-    if (!plungerEndRead()) {
+    if (!switchPlungerStopRead()) {
       SET_PLUNGER_STATE(PLUNGER_STATE_RUN_PLUNGER);
       //displayUpdateForce = true;
     }
@@ -641,9 +625,9 @@ void loop() {
     plungerMotorPWM(MOTOR_DIR_FWD, paramRead(PARAM_PLUNGER_PWM_RUN_SPEED));
     ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
     displayUpdateEnable = false;
-    if (plungerEndRead() && STATE_DELAY(25)) {
+    if (switchPlungerStopRead() && STATE_DELAY(25)) {
       // plunger is at end.  stop it if we're in semi-auto
-      if (!revTriggerRead()) {
+      if (!switchRevTriggerRead()) {
         // semi auto.  stop the plunger
         SET_PLUNGER_STATE(PLUNGER_STATE_WAIT_FOR_TRIGGGER_RELEASE);
       } else {
@@ -660,7 +644,7 @@ void loop() {
     displayUpdateEnable = false;
     if ((millis() - plungerStateTime) > ROUND_DELAY_TIME) {
       //displayUpdateForce = true;
-      if (triggerRead()) {
+      if (switchTriggerRead()) {
         // chamber another round
         SET_PLUNGER_STATE(PLUNGER_STATE_CLEAR_END_SWITCH);
       }
@@ -669,7 +653,7 @@ void loop() {
       // rev down the flywheel to idle speed until the trigger is pulled again
       SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
     }
-    if (!revTriggerRead()) {
+    if (!switchRevTriggerRead()) {
       // semi auto.  stop the plunger
       SET_PLUNGER_STATE(PLUNGER_STATE_WAIT_FOR_TRIGGGER_RELEASE);
     }
@@ -680,7 +664,7 @@ void loop() {
     plungerMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
     ESCPos = FLYWHEEL_MOTOR_ESC_BRAKE;
     displayUpdateEnable = false;
-    if (!triggerRead()) {
+    if (!switchTriggerRead()) {
       SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
     }
     break;
@@ -742,13 +726,15 @@ void screenDrawTitle(const char * title) {
   display.setCursor(0, SCREEN_UNDERLINE_POS+2);
 }
 
-uint8_t paramCount;
 int8_t selectIdx = 0;
 int8_t scrollIdx = 0;
-int16_t paramTemp;
-int16_t paramMin;
-int16_t paramMax;
-int16_t paramStep;
+#define PARAM_COUNT (sizeof(configParams)/sizeof(ConfigParam))
+#define PARAM_MAX(idx) ((int16_t)pgm_read_word(&configParams[selectIdx].valueMax))
+#define PARAM_MIN(idx) ((int16_t)pgm_read_word(&configParams[selectIdx].valueMin))
+#define PARAM_STEP(idx) ((int16_t)pgm_read_word(&configParams[selectIdx].valueStep))
+#define PARAM_DEFAULT(idx) ((int16_t)pgm_read_word(&configParams[idx].valueStep))
+#define PARAM_NAME(idx) ((const char*)&configParams[idx].name)
+
 
 int16_t paramRead(uint8_t paramIdx) {
   uint16_t val;
@@ -769,13 +755,13 @@ void paramDefaultCheck(void) {
   if (paramRead(PARAM_RESET_ALL) != 0) {
     // parameters need to be initialiszed or reset.
     // Copy default values from flash.
-    for(uint8_t i = 0; i < paramCount; i++) {
-      paramWrite(i, (int16_t)pgm_read_word(&configParams[i].valueDefault));
+    for(uint8_t i = 0; i < PARAM_COUNT; i++) {
+      paramWrite(i, PARAM_DEFAULT(i));
 
       Serial.print(F(" param:"));
-      SerialPrint_F((const char*)&configParams[i].name);
+      SerialPrint_F(PARAM_NAME(i));
       Serial.print(F(" default="));
-      Serial.print((int16_t)pgm_read_word(&configParams[i].valueDefault), DEC);
+      Serial.print(PARAM_DEFAULT(i), DEC);
       Serial.print(F(" read="));
       Serial.println(paramRead(i), DEC);
     }
@@ -783,7 +769,6 @@ void paramDefaultCheck(void) {
 }
 
 void paramInit(void) {
-  paramCount = sizeof(configParams)/sizeof(ConfigParam);
   paramDefaultCheck();
 }
 
@@ -798,10 +783,6 @@ void displayScreenConfig() {
     } else {
       //select the parameter unter the curcur for editing
       UIMode = UI_SCREEN_CONFIG_EDIT;
-      paramTemp = paramRead(selectIdx);
-      paramMin = (int16_t)pgm_read_word(&configParams[selectIdx].valueMin);
-      paramMax = (int16_t)pgm_read_word(&configParams[selectIdx].valueMax);
-      paramStep = (int16_t)pgm_read_word(&configParams[selectIdx].valueStep);
     }
     break;
     }
@@ -818,9 +799,10 @@ void displayScreenConfig() {
   case BUTTON_EVENT_SHORT_UP: {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
       // increase parameter value
-      paramTemp += paramStep;
-      if (paramTemp > paramMax) {
-        paramTemp = paramMax;
+      int16_t paramTemp = paramRead(selectIdx);
+      paramTemp += PARAM_STEP(selectIdx);
+      if (paramTemp > PARAM_MAX(selectIdx)) {
+        paramTemp = PARAM_MAX(selectIdx);
       }
       paramWrite(selectIdx, paramTemp);
     } else {
@@ -839,14 +821,15 @@ void displayScreenConfig() {
   case BUTTON_EVENT_SHORT_DOWN: {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
       // decrease parameter value
-      paramTemp -= paramStep;
-      if (paramTemp < paramMin) {
-        paramTemp = paramMin;
+      int16_t paramTemp = paramRead(selectIdx);
+      paramTemp -= PARAM_STEP(selectIdx);
+      if (paramTemp < PARAM_MIN(selectIdx)) {
+        paramTemp = PARAM_MIN(selectIdx);
       }
       paramWrite(selectIdx, paramTemp);
     } else {
       // next parameter
-      if (selectIdx < (paramCount - 1)) {
+      if (selectIdx < (PARAM_COUNT - 1)) {
         selectIdx++;
         highlightPos = selectIdx - scrollIdx;
         if (highlightPos >= SCREEN_CONFIG_ROWS) {
@@ -871,17 +854,11 @@ void displayScreenConfig() {
     displayPrint_P((const char*)&configParams[scrollIdx + i].name);
     display.print(F(":"));
 
-    int16_t paramPrint;
+    int16_t paramPrint = paramRead(scrollIdx + i);
     if (i == highlightPos) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
-      if (UIMode == UI_SCREEN_CONFIG_EDIT) {
-        paramPrint = paramTemp;
-      } else {
-        paramPrint = paramRead(scrollIdx + i);
-      }
     } else {
       display.setTextColor(WHITE);
-      paramPrint = paramRead(scrollIdx + i);
     }
     display.print(paramPrint, DEC);
     if(paramPrint < 1000) {display.print(F(" "));}
@@ -911,11 +888,11 @@ void displayScreenDiag() {
   screenDrawTitle((const char *)F("System Diagonstic"));
 
   display.print(F("Volt=")); display.println(voltageBatteryAvg, 1);
-  display.print(F("Rev=")); printBit(revTriggerRead()); display.print(F(" "));
-  display.print(F("Tgr=")); printBit(triggerRead()); display.print(F(" "));
-  display.print(F("Brl=")); printBit(barrelRead()); display.println(F(""));
-  display.print(F("Jam=")); printBit(jamDoorRead()); display.print(F(" "));
-  display.print(F("Mag=")); printBit(magazineSwitchRead()); display.println(F(""));
+  display.print(F("Rev=")); printBit(switchRevTriggerRead()); display.print(F(" "));
+  display.print(F("Tgr=")); printBit(switchTriggerRead()); display.print(F(" "));
+  display.print(F("Brl=")); printBit(sensorBarrelRead()); display.println(F(""));
+  display.print(F("Jam=")); printBit(switchJamDoorRead()); display.print(F(" "));
+  display.print(F("Mag=")); printBit(switchMagSafetyRead()); display.println(F(""));
   display.print(F("MagBits="));
     uint8_t bits = magTypeReadBits();
     printBit(bitRead(bits, 0));
