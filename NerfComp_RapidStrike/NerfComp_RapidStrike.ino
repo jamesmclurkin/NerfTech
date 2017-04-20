@@ -74,6 +74,31 @@ Adafruit_MCP23008 GPIO_mag;
 Adafruit_MCP23008 GPIO_UI;
 #endif
 
+#define MENU_ITEM_NAME_SIZE 12
+
+#define UI_SCREEN_HUD         0
+#define UI_SCREEN_MENU        1
+#define UI_SCREEN_CONFIG      2
+#define UI_SCREEN_CONFIG_EDIT 3
+#define UI_SCREEN_TIMER       4
+#define UI_SCREEN_DIAGNOSTIC  5
+
+typedef struct MenuItem {
+  const char name[MENU_ITEM_NAME_SIZE];
+  const uint8_t UIMode;
+} MenuItem;
+
+const MenuItem menuItems[] PROGMEM = {
+   // 012345678901234567890
+   //"Menu       "
+    {"        HUD", UI_SCREEN_HUD},
+    {"     Config", UI_SCREEN_CONFIG},
+    {"      Timer", UI_SCREEN_TIMER},
+    {"Diagnostics", UI_SCREEN_DIAGNOSTIC},
+};
+
+
+
 #define CONFIG_PARAM_NAME_SIZE 17
 
 typedef struct ConfigParam {
@@ -236,11 +261,6 @@ void irqBarrelEnd() {
 
 
 //////// user Interface ////////
-
-#define UI_SCREEN_HUD         0
-#define UI_SCREEN_DIAGNOSTIC  1
-#define UI_SCREEN_CONFIG      2
-#define UI_SCREEN_CONFIG_EDIT 3
 
 #define OLED_RESET 4
 #ifdef SCREEN_ENABLE
@@ -711,6 +731,76 @@ void displayPrint_P(const char * str) {
     display.print(c);
 }
 
+
+#define MENUITEM_COUNT (sizeof(menuItems)/sizeof(MenuItem))
+#define MENUITEM_UIMODE(idx) ((uint8_t)pgm_read_byte(&menuItems[idx].UIMode))
+#define MENUITEM_NAME(idx) ((const char*)&menuItems[idx].name)
+#define SCREEN_MENU_ROWS 4
+
+int8_t menuSelectIdx = 0;
+int8_t menuScrollIdx = 0;
+
+void displayScreenMenu() {
+  // check the buttons
+  int8_t highlightPos = menuSelectIdx - menuScrollIdx;
+  switch (buttonEventGet()) {
+  case BUTTON_EVENT_SHORT_SELECT: {
+    // select the menu item cursor
+    UIMode = MENUITEM_UIMODE(menuSelectIdx);
+    break;
+    }
+  case BUTTON_EVENT_SHORT_BACK: {
+    //Go back to menu screen
+    UIMode = UI_SCREEN_HUD;
+    break;
+    }
+  case BUTTON_EVENT_SHORT_UP: {
+    // prev menuitem
+    if (menuSelectIdx > 0) {
+      menuSelectIdx--;
+      highlightPos = menuSelectIdx - menuScrollIdx;
+      if (highlightPos < 0) {
+        menuScrollIdx--;
+        highlightPos = menuSelectIdx - menuScrollIdx;
+      }
+    }
+    break;
+    }
+  case BUTTON_EVENT_SHORT_DOWN: {
+    // next parameter
+    if (menuSelectIdx < (MENUITEM_COUNT - 1)) {
+      menuSelectIdx++;
+      highlightPos = menuSelectIdx - menuScrollIdx;
+      if (highlightPos >= SCREEN_MENU_ROWS) {
+        menuScrollIdx++;
+        highlightPos = menuSelectIdx - menuScrollIdx;
+      }
+    }
+    break;
+    }
+  }
+
+  // draw the config screen
+  //screenDrawTitle((const char *)F("System Config"));
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+
+  for(uint8_t i = 0; i < SCREEN_MENU_ROWS; i++) {
+    //Compute which screen line to highlight
+    if (i == highlightPos) {
+      display.setTextColor(BLACK, WHITE); // 'inverted' text
+    } else {
+      display.setTextColor(WHITE);
+    }
+    displayPrint_P(MENUITEM_NAME(menuScrollIdx + i));
+    display.println(F(""));
+  }
+  display.display();
+}
+
+
 #define SCREEN_UNDERLINE_POS  8
 #define SCREEN_CONFIG_ROWS 6
 
@@ -726,15 +816,15 @@ void screenDrawTitle(const char * title) {
   display.setCursor(0, SCREEN_UNDERLINE_POS+2);
 }
 
-int8_t selectIdx = 0;
-int8_t scrollIdx = 0;
 #define PARAM_COUNT (sizeof(configParams)/sizeof(ConfigParam))
-#define PARAM_MAX(idx) ((int16_t)pgm_read_word(&configParams[selectIdx].valueMax))
-#define PARAM_MIN(idx) ((int16_t)pgm_read_word(&configParams[selectIdx].valueMin))
-#define PARAM_STEP(idx) ((int16_t)pgm_read_word(&configParams[selectIdx].valueStep))
+#define PARAM_MAX(idx) ((int16_t)pgm_read_word(&configParams[configSelectIdx].valueMax))
+#define PARAM_MIN(idx) ((int16_t)pgm_read_word(&configParams[configSelectIdx].valueMin))
+#define PARAM_STEP(idx) ((int16_t)pgm_read_word(&configParams[configSelectIdx].valueStep))
 #define PARAM_DEFAULT(idx) ((int16_t)pgm_read_word(&configParams[idx].valueStep))
 #define PARAM_NAME(idx) ((const char*)&configParams[idx].name)
 
+int8_t configSelectIdx = 0;
+int8_t configScrollIdx = 0;
 
 int16_t paramRead(uint8_t paramIdx) {
   uint16_t val;
@@ -774,7 +864,7 @@ void paramInit(void) {
 
 void displayScreenConfig() {
   // check the buttons
-  int8_t highlightPos = selectIdx - scrollIdx;
+  int8_t highlightPos = configSelectIdx - configScrollIdx;
   switch (buttonEventGet()) {
   case BUTTON_EVENT_SHORT_SELECT: {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
@@ -792,27 +882,27 @@ void displayScreenConfig() {
       paramDefaultCheck();
       UIMode = UI_SCREEN_CONFIG;
     } else {
-      UIMode = UI_SCREEN_DIAGNOSTIC;
+      UIMode = UI_SCREEN_MENU;
     }
     break;
     }
   case BUTTON_EVENT_SHORT_UP: {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
       // increase parameter value
-      int16_t paramTemp = paramRead(selectIdx);
-      paramTemp += PARAM_STEP(selectIdx);
-      if (paramTemp > PARAM_MAX(selectIdx)) {
-        paramTemp = PARAM_MAX(selectIdx);
+      int16_t paramTemp = paramRead(configSelectIdx);
+      paramTemp += PARAM_STEP(configSelectIdx);
+      if (paramTemp > PARAM_MAX(configSelectIdx)) {
+        paramTemp = PARAM_MAX(configSelectIdx);
       }
-      paramWrite(selectIdx, paramTemp);
+      paramWrite(configSelectIdx, paramTemp);
     } else {
       // prev parameter
-      if (selectIdx > 0) {
-        selectIdx--;
-        highlightPos = selectIdx - scrollIdx;
+      if (configSelectIdx > 0) {
+        configSelectIdx--;
+        highlightPos = configSelectIdx - configScrollIdx;
         if (highlightPos < 0) {
-          scrollIdx--;
-          highlightPos = selectIdx - scrollIdx;
+          configScrollIdx--;
+          highlightPos = configSelectIdx - configScrollIdx;
         }
       }
     }
@@ -821,20 +911,20 @@ void displayScreenConfig() {
   case BUTTON_EVENT_SHORT_DOWN: {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
       // decrease parameter value
-      int16_t paramTemp = paramRead(selectIdx);
-      paramTemp -= PARAM_STEP(selectIdx);
-      if (paramTemp < PARAM_MIN(selectIdx)) {
-        paramTemp = PARAM_MIN(selectIdx);
+      int16_t paramTemp = paramRead(configSelectIdx);
+      paramTemp -= PARAM_STEP(configSelectIdx);
+      if (paramTemp < PARAM_MIN(configSelectIdx)) {
+        paramTemp = PARAM_MIN(configSelectIdx);
       }
-      paramWrite(selectIdx, paramTemp);
+      paramWrite(configSelectIdx, paramTemp);
     } else {
       // next parameter
-      if (selectIdx < (PARAM_COUNT - 1)) {
-        selectIdx++;
-        highlightPos = selectIdx - scrollIdx;
+      if (configSelectIdx < (PARAM_COUNT - 1)) {
+        configSelectIdx++;
+        highlightPos = configSelectIdx - configScrollIdx;
         if (highlightPos >= SCREEN_CONFIG_ROWS) {
-          scrollIdx++;
-          highlightPos = selectIdx - scrollIdx;
+          configScrollIdx++;
+          highlightPos = configSelectIdx - configScrollIdx;
         }
       }
     }
@@ -851,10 +941,11 @@ void displayScreenConfig() {
     } else {
       display.setTextColor(WHITE);
     }
-    displayPrint_P((const char*)&configParams[scrollIdx + i].name);
+    //displayPrint_P((const char*)&configParams[configScrollIdx + i].name);
+    displayPrint_P(PARAM_NAME(configScrollIdx + i));
     display.print(F(":"));
 
-    int16_t paramPrint = paramRead(scrollIdx + i);
+    int16_t paramPrint = paramRead(configScrollIdx + i);
     if (i == highlightPos) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
     } else {
@@ -871,15 +962,11 @@ void displayScreenConfig() {
 
 
 void displayScreenDiag() {
+  // dispay the diagnostic screen
   switch (buttonEventGet()) {
-  case BUTTON_EVENT_SHORT_SELECT: {
-    //advance to config screen
-    UIMode = UI_SCREEN_CONFIG;
-    break;
-    }
   case BUTTON_EVENT_SHORT_BACK: {
     //Go back to menu screen
-    UIMode = UI_SCREEN_HUD;
+    UIMode = UI_SCREEN_MENU;
     break;
     }
   }
@@ -914,7 +1001,7 @@ void displayScreenHUD() {
   switch (buttonEventGet()) {
   case BUTTON_EVENT_SHORT_SELECT: {
     //advance to config screen
-    UIMode = UI_SCREEN_DIAGNOSTIC;
+    UIMode = UI_SCREEN_MENU;
     break;
     }
   }
@@ -980,6 +1067,9 @@ void displayUpdate() {
     break;
   case UI_SCREEN_DIAGNOSTIC:
     displayScreenDiag();
+    break;
+  case UI_SCREEN_MENU:
+    displayScreenMenu();
     break;
   default:
   case UI_SCREEN_HUD:
