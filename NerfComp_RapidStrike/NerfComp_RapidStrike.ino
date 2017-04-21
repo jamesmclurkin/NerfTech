@@ -91,10 +91,12 @@ typedef struct MenuItem {
 const MenuItem menuItems[] PROGMEM = {
    // 012345678901234567890
    //"Menu       "
-    {"        HUD", UI_SCREEN_HUD},
-    {"     Config", UI_SCREEN_CONFIG},
-    {"      Timer", UI_SCREEN_TIMER},
-    {"Diagnostics", UI_SCREEN_DIAGNOSTIC},
+    {"       HUD", UI_SCREEN_HUD},
+    {"    Config", UI_SCREEN_CONFIG},
+    {"     Timer", UI_SCREEN_TIMER},
+    {"Diagnostic", UI_SCREEN_DIAGNOSTIC},
+    {" MenuItem1", UI_SCREEN_DIAGNOSTIC},
+    {" MenuItem2", UI_SCREEN_DIAGNOSTIC},
 };
 
 
@@ -267,7 +269,7 @@ void irqBarrelEnd() {
 Adafruit_SSD1306 display(OLED_RESET);
 #endif
 
-uint8_t UIMode = UI_SCREEN_CONFIG;
+uint8_t UIMode = UI_SCREEN_HUD;
 
 
 #define BUTTON_BIT_SELECT       0x02
@@ -795,7 +797,7 @@ void displayScreenMenu() {
       display.setTextColor(WHITE);
     }
     displayPrint_P(MENUITEM_NAME(menuScrollIdx + i));
-    display.println(F(""));
+    //display.println(F(""));
   }
   display.display();
 }
