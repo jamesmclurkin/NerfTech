@@ -14,10 +14,6 @@
 #define ARDUINO_NANO
 //#define ARDUINO_PROMICRO
 
-#define SCREEN_ENABLE
-#define SCREEN_GPIO_ENABLE
-#define MAG_GPIO_ENABLE
-
 #include <NerfComp.h>
 
 
@@ -30,6 +26,7 @@ uint8_t roundsJamCount = 0;
 float velocity = -1;
 float voltageBatteryAvg = 0.0;
 boolean jamDoorOpen = false;
+boolean feedJam = false;
 
 volatile unsigned long timeBarrelStart = 0;
 volatile boolean timeBarrelStartFlag = false;
@@ -67,12 +64,8 @@ const MagazineType magazineTypes[] PROGMEM = {
 
 
 // GPIO Port expander for mag type and screen UI
-#ifdef MAG_GPIO_ENABLE
 Adafruit_MCP23008 GPIO_mag;
-#endif
-#ifdef SCREEN_GPIO_ENABLE
 Adafruit_MCP23008 GPIO_UI;
-#endif
 
 #define MENU_ITEM_NAME_SIZE 12
 
@@ -158,11 +151,7 @@ uint8_t flipLowNibble(uint8_t val) {
 uint8_t magTypeReadBits() {
   uint8_t magTypeBits = MAGTYPE_EMPTY;
   if (switchMagSafetyRead()) {
-    #ifdef MAG_GPIO_ENABLE
     magTypeBits = GPIO_mag.readGPIO();
-    #else
-    uint8_t magTypeBits = 0xFF;
-    #endif
     //mask and invert
     magTypeBits = ((~magTypeBits) >> 4) & 0x0f;
     //flip if needed
@@ -265,9 +254,7 @@ void irqBarrelEnd() {
 //////// user Interface ////////
 
 #define OLED_RESET 4
-#ifdef SCREEN_ENABLE
 Adafruit_SSD1306 display(OLED_RESET);
-#endif
 
 uint8_t UIMode = UI_SCREEN_HUD;
 
@@ -293,11 +280,7 @@ uint8_t buttonEvent = BUTTON_EVENT_NULL;
 
 uint8_t _buttonRead() {
   uint8_t buttonBits;
-#ifdef SCREEN_GPIO_ENABLE
   buttonBits = ~GPIO_UI.readGPIO();
-#else
-  buttonBits = 0x00;
-#endif
   return buttonBits;
 }
 
@@ -391,20 +374,16 @@ void setup() {
   pinMode(PIN_PLUNGER_END_SWITCH, INPUT_PULLUP);
 
   // init the port expanders for mag type and HUD buttons
-#ifdef MAG_GPIO_ENABLE
   GPIO_mag.begin(0);      // GPIO magazine is on address 0
   for (int i = 0; i < 8; ++i) {
     GPIO_mag.pinMode(i, INPUT);
     GPIO_mag.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
-#endif
-#ifdef SCREEN_GPIO_ENABLE
   GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
   for (int i = 0; i < 8; ++i) {
     GPIO_UI.pinMode(i, INPUT);
     GPIO_UI.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
-#endif
 
 
   plungerMotorInit();
@@ -423,8 +402,6 @@ void setup() {
   paramInit();
 
   // init the LED Display
-#ifdef SCREEN_ENABLE
-
   // generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
 
@@ -435,7 +412,6 @@ void setup() {
 
   // show the screen for a while
   delay(2000);
-#endif
 
   // force an update to show  the initial data display
   displayUpdate();
@@ -519,12 +495,8 @@ void loop() {
     }
     p = false;
     if (p) {Serial.print(F("hb "));}
-#ifdef MAG_GPIO_ENABLE
     if (p) {Serial.print(F("  magbits=")); Serial.print(GPIO_mag.readGPIO(), HEX); }
-#endif
-#ifdef SCREEN_GPIO_ENABLE
     if (p) {Serial.print(F("  uibits=")); Serial.print(GPIO_UI.readGPIO(), HEX); }
-#endif
     if (p) {Serial.print(F("  rounds=")); Serial.print(roundCount, DEC); }
 
 
@@ -572,7 +544,9 @@ void loop() {
       if (jamDoorOpen != jamDoorOpenTemp) {
         if (jamDoorOpenTemp) {
           // jam door has gone from closed to open.  inc the jam count
+          // clear the feed jam indicator if it was set
           roundsJamCount++;
+          feedJam = false;
         } else {
           // jam door has gone from open to closed.  decrement a round
           if (roundCount > 0) {
@@ -640,6 +614,10 @@ void loop() {
       SET_PLUNGER_STATE(PLUNGER_STATE_RUN_PLUNGER);
       //displayUpdateForce = true;
     }
+    if (STATE_DELAY(FEED_JAM_TIME)) {
+      SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
+      feedJam = true;
+    }
     break;
   }
   case PLUNGER_STATE_RUN_PLUNGER: {
@@ -655,6 +633,10 @@ void loop() {
       } else {
         SET_PLUNGER_STATE(PLUNGER_STATE_ROUND_DELAY);
       }
+    }
+    if (STATE_DELAY(FEED_JAM_TIME)) {
+      SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
+      feedJam = true;
     }
     break;
   }
@@ -799,7 +781,6 @@ void displayScreenMenu() {
     displayPrint_P(MENUITEM_NAME(menuScrollIdx + i));
     //display.println(F(""));
   }
-  display.display();
 }
 
 
@@ -959,7 +940,6 @@ void displayScreenConfig() {
     if(paramPrint < 10) {display.print(F(" "));}
     //display.println(F(""));
   }
-  display.display();
 }
 
 
@@ -990,7 +970,6 @@ void displayScreenDiag() {
     printBit(bitRead(bits, 3));
     display.print(F("="));
     displayPrint_P(magazineTypes[magazineTypeIdx].name); display.println(F(""));
-  display.display();
 }
 
 
@@ -999,7 +978,6 @@ void displayScreenDiag() {
 #define POSY_SEVEN_SEG_DIGIT  12
 
 void displayScreenHUD() {
-#ifdef SCREEN_ENABLE
   switch (buttonEventGet()) {
   case BUTTON_EVENT_SHORT_SELECT: {
     //advance to config screen
@@ -1031,13 +1009,9 @@ void displayScreenHUD() {
   }
   display.print(F("Volt:"));
   display.println(voltageBatteryAvg, 1);
-  if (jamDoorOpen) {
-    // draw the jam text inverted if the door is open
-    display.setTextColor(BLACK, WHITE); // 'inverted' text
-  }
-  display.print(F("Jam:"));
+
+  display.print(F("JamCount:"));
   display.println(roundsJamCount, DEC);
-  display.setTextColor(WHITE);
 
   // draw the round digits.
   int digit0 = SEVEN_SEGMENT_BITMAP_DASH;
@@ -1055,9 +1029,22 @@ void displayScreenHUD() {
       (uint8_t *) &(SevenSegmentBitMaps[digit1]),
       SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
 
-  display.display();
-#endif
+  // draw the jam door indicator or the feed jam indicator
+  if (jamDoorOpen || feedJam) {
+    //fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color),
+    display.fillRoundRect(12, 20, 102, 23, 3, WHITE),
+    display.drawRoundRect(12, 20, 102, 23, 3, BLACK),
+    display.setTextSize(2);
+    display.setCursor(16, 24);
+    display.setTextColor(BLACK, WHITE); // 'inverted' text
+    if (jamDoorOpen) {
+      display.print(F("Jam:Door"));
+    } else if (feedJam) {
+      display.print(F("Jam:Feed"));
+    }
+  }
 }
+
 
 void displayUpdate() {
   display.dim(paramRead(PARAM_DISPLAY_DIM));
@@ -1078,4 +1065,5 @@ void displayUpdate() {
     displayScreenHUD();
     break;
   }
+  display.display();
 }
