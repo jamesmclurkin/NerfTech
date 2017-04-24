@@ -155,7 +155,7 @@ uint8_t magTypeReadBits() {
     //mask and invert
     magTypeBits = ((~magTypeBits) >> 4) & 0x0f;
     //flip if needed
-    magTypeBits = flipLowNibble(magTypeBits);
+    //magTypeBits = flipLowNibble(magTypeBits);
   }
   return magTypeBits;
 }
@@ -493,7 +493,7 @@ void loop() {
       heartbeatPrintTime += HEARTBEAT_PRINT_PERIOD;
       p = true;
     }
-    p = false;
+    //p = false;
     if (p) {Serial.print(F("hb "));}
     if (p) {Serial.print(F("  magbits=")); Serial.print(GPIO_mag.readGPIO(), HEX); }
     if (p) {Serial.print(F("  uibits=")); Serial.print(GPIO_UI.readGPIO(), HEX); }
@@ -615,7 +615,7 @@ void loop() {
       //displayUpdateForce = true;
     }
     if (STATE_DELAY(FEED_JAM_TIME)) {
-      SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
+      //SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
       feedJam = true;
     }
     break;
@@ -635,7 +635,7 @@ void loop() {
       }
     }
     if (STATE_DELAY(FEED_JAM_TIME)) {
-      SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
+      //SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
       feedJam = true;
     }
     break;
@@ -800,10 +800,10 @@ void screenDrawTitle(const char * title) {
 }
 
 #define PARAM_COUNT (sizeof(configParams)/sizeof(ConfigParam))
-#define PARAM_MAX(idx) ((int16_t)pgm_read_word(&configParams[configSelectIdx].valueMax))
-#define PARAM_MIN(idx) ((int16_t)pgm_read_word(&configParams[configSelectIdx].valueMin))
-#define PARAM_STEP(idx) ((int16_t)pgm_read_word(&configParams[configSelectIdx].valueStep))
-#define PARAM_DEFAULT(idx) ((int16_t)pgm_read_word(&configParams[idx].valueStep))
+#define PARAM_DEFAULT(idx) ((int16_t)pgm_read_word(&configParams[idx].valueDefault))
+#define PARAM_MAX(idx)     ((int16_t)pgm_read_word(&configParams[idx].valueMax))
+#define PARAM_MIN(idx)     ((int16_t)pgm_read_word(&configParams[idx].valueMin))
+#define PARAM_STEP(idx)    ((int16_t)pgm_read_word(&configParams[idx].valueStep))
 #define PARAM_NAME(idx) ((const char*)&configParams[idx].name)
 
 int8_t configSelectIdx = 0;
