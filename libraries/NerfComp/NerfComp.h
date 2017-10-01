@@ -70,7 +70,7 @@
 #define FLYWHEEL_REVUP_TIME_SEMI        500
 #define FLYWHEEL_REVUP_TIME_FULL        300
 #define FLYWHEEL_REVDOWN_TIME_FULL      2000
-#define FEED_JAM_TIME                   250
+#define FEED_JAM_TIME                   500
 
 #define FLYWHEEL_MOTOR_ESC_NEUTRAL      90
 #define FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL 96

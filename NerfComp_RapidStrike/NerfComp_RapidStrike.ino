@@ -119,7 +119,7 @@ const ConfigParam configParams[] PROGMEM = {
     {"   Rev time semi", FLYWHEEL_REVUP_TIME_SEMI,  0, 1000, 50},
     {"   Rev time full", FLYWHEEL_REVUP_TIME_FULL,  0, 1000, 50},
     {"   Plunger speed", PLUNGER_PWM_RUN_SPEED,    50,  250, 5 },
-    {"     Dart sength", DART_LENGTH_MM,           10,  200, 1 },
+    {"     Dart length", DART_LENGTH_MM,           10,  200, 1 },
     {"     Display dim", 0,                         0,    1, 1 },
     {"Reset to default", 0,                         0,    1, 1 },
 };
