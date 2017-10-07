@@ -98,7 +98,24 @@
 
 
 
+#define PARAM_FLYWHEEL_MOTOR_ESC_RUN    0
+#define PARAM_FLYWHEEL_REVUP_TIME_SEMI  1
+#define PARAM_FLYWHEEL_REVUP_TIME_FULL  2
+#define PARAM_PLUNGER_PWM_RUN_SPEED     3
+#define PARAM_DART_LENGTH_MM            4
+#define PARAM_DISPLAY_DIM               5
+#define PARAM_RESET_ALL                 6
 
+
+//////// globals ////////
+extern float voltageBatteryAvg;
+extern uint8_t magazineTypeIdx;
+extern int16_t roundsPerMin;
+extern float velocity;
+extern uint8_t roundsJamCount;
+extern int8_t roundCount;
+extern boolean jamDoorOpen;
+extern boolean feedJam;
 
 
 
@@ -109,3 +126,15 @@
 //////// function declarations ////////
 void paramInit(void);
 int16_t paramRead(uint8_t paramIdx);
+void SerialPrint_F (const char * str);
+boolean switchMagSafetyRead(void);
+boolean switchRevTriggerRead(void);
+boolean switchJamDoorRead(void);
+boolean switchTriggerRead(void);
+boolean switchPlungerStopRead(void);
+boolean sensorBarrelRead(void);
+uint8_t magTypeReadBits(void);
+
+uint8_t magazineTypesGetCode(uint8_t magazineTypeIdx);
+uint8_t magazineTypesGetCapacity(uint8_t magazineTypeIdx);
+const char * magazineTypesGetName(uint8_t magazineTypeIdx);  
