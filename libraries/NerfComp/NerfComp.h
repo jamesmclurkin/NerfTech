@@ -97,6 +97,7 @@
 
 
 
+#define CONFIG_PARAM_NAME_SIZE 17
 
 #define PARAM_FLYWHEEL_MOTOR_ESC_RUN    0
 #define PARAM_FLYWHEEL_REVUP_TIME_SEMI  1
@@ -105,6 +106,21 @@
 #define PARAM_DART_LENGTH_MM            4
 #define PARAM_DISPLAY_DIM               5
 #define PARAM_RESET_ALL                 6
+
+typedef struct ConfigParam {
+  const char name[CONFIG_PARAM_NAME_SIZE];
+  const int16_t valueDefault;
+  const int16_t valueMin;
+  const int16_t valueMax;
+  const int16_t valueStep;
+} ConfigParam;
+
+int8_t paramCount(void);
+int16_t paramValueDefault(uint8_t idx);
+int16_t paramValueMax(uint8_t idx);
+int16_t paramValueMin(uint8_t idx);
+int16_t paramValueStep(uint8_t idx);
+const char* paramName(uint8_t idx);
 
 
 //////// globals ////////

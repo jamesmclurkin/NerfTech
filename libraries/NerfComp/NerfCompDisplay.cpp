@@ -32,35 +32,7 @@ const MenuItem menuItems[] PROGMEM = {
     {"    Config", UI_SCREEN_CONFIG},
     {"     Timer", UI_SCREEN_TIMER},
     {"Diagnostic", UI_SCREEN_DIAGNOSTIC},
-    {" MenuItem1", UI_SCREEN_DIAGNOSTIC},
-    {" MenuItem2", UI_SCREEN_DIAGNOSTIC},
 };
-
-
-
-#define CONFIG_PARAM_NAME_SIZE 17
-
-typedef struct ConfigParam {
-  const char name[CONFIG_PARAM_NAME_SIZE];
-  const int16_t valueDefault;
-  const int16_t valueMin;
-  const int16_t valueMax;
-  const int16_t valueStep;
-} ConfigParam;
-
-const ConfigParam configParams[] PROGMEM = {
-    //012345678901234567890
-  //("   System Config:XXXX"));
-    {"       Rev speed", FLYWHEEL_MOTOR_ESC_RUN,  100,  200, 5 },
-    {"   Rev time semi", FLYWHEEL_REVUP_TIME_SEMI,  0, 1000, 50},
-    {"   Rev time full", FLYWHEEL_REVUP_TIME_FULL,  0, 1000, 50},
-    {"   Plunger speed", PLUNGER_PWM_RUN_SPEED,    50,  250, 5 },
-    {"     Dart length", DART_LENGTH_MM,           10,  200, 1 },
-    {"     Display dim", 0,                         0,    1, 1 },
-    {"Reset to default", 0,                         0,    1, 1 },
-};
-
-
 
 //////// user Interface ////////
 
@@ -155,10 +127,26 @@ void displayPrint_P(const char * str) {
 }
 
 
+#define SCREEN_UNDERLINE_POS  8
+#define SCREEN_CONFIG_ROWS 6
+
+void screenDrawTitle(const char * title) {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  // draw scren title
+  display.setCursor(0, 0);
+  displayPrint_P(title);
+  display.drawLine(0, SCREEN_UNDERLINE_POS, display.width() - 1, SCREEN_UNDERLINE_POS, WHITE);
+  display.setCursor(0, SCREEN_UNDERLINE_POS+2);
+}
+
+
 #define MENUITEM_COUNT (sizeof(menuItems)/sizeof(MenuItem))
 #define MENUITEM_UIMODE(idx) ((uint8_t)pgm_read_byte(&menuItems[idx].UIMode))
 #define MENUITEM_NAME(idx) ((const char*)&menuItems[idx].name)
-#define SCREEN_MENU_ROWS 4
+#define SCREEN_MENU_ROWS 7
 
 int8_t menuSelectIdx = 0;
 int8_t menuScrollIdx = 0;
@@ -203,47 +191,26 @@ void displayScreenMenu() {
     }
   }
 
-  // draw the config screen
-  //screenDrawTitle((const char *)F("System Config"));
   display.clearDisplay();
-  display.setTextSize(2);
+  display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
 
-  for(uint8_t i = 0; i < SCREEN_MENU_ROWS; i++) {
-    //Compute which screen line to highlight
+  screenDrawTitle((const char *)F("Main Menu"));
+
+  uint8_t menuLinesToDraw = min(MENUITEM_COUNT, SCREEN_MENU_ROWS);
+  for(uint8_t i = 0; i < menuLinesToDraw; i++) {
+    //Compute which menu line to highlight
     if (i == highlightPos) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
     } else {
       display.setTextColor(WHITE);
     }
     displayPrint_P(MENUITEM_NAME(menuScrollIdx + i));
-    //display.println(F(""));
+    display.println(F(""));
   }
 }
 
-
-#define SCREEN_UNDERLINE_POS  8
-#define SCREEN_CONFIG_ROWS 6
-
-void screenDrawTitle(const char * title) {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-
-  // draw scren title
-  display.setCursor(0, 0);
-  displayPrint_P(title);
-  display.drawLine(0, SCREEN_UNDERLINE_POS, display.width() - 1, SCREEN_UNDERLINE_POS, WHITE);
-  display.setCursor(0, SCREEN_UNDERLINE_POS+2);
-}
-
-#define PARAM_COUNT (sizeof(configParams)/sizeof(ConfigParam))
-#define PARAM_DEFAULT(idx) ((int16_t)pgm_read_word(&configParams[idx].valueDefault))
-#define PARAM_MAX(idx)     ((int16_t)pgm_read_word(&configParams[idx].valueMax))
-#define PARAM_MIN(idx)     ((int16_t)pgm_read_word(&configParams[idx].valueMin))
-#define PARAM_STEP(idx)    ((int16_t)pgm_read_word(&configParams[idx].valueStep))
-#define PARAM_NAME(idx) ((const char*)&configParams[idx].name)
 
 int8_t configSelectIdx = 0;
 int8_t configScrollIdx = 0;
@@ -267,20 +234,20 @@ void paramDefaultCheck(void) {
   if (paramRead(PARAM_RESET_ALL) != 0) {
     // parameters need to be initialiszed or reset.
     // Copy default values from flash.
-    for(uint8_t i = 0; i < PARAM_COUNT; i++) {
-      paramWrite(i, PARAM_DEFAULT(i));
+    for(uint8_t i = 0; i < paramCount(); i++) {
+      paramWrite(i, paramValueDefault(i));
 
       Serial.print(F(" param:"));
-      SerialPrint_F(PARAM_NAME(i));
+      SerialPrint_F(paramName(i));
       Serial.print(F(" default="));
-      Serial.print(PARAM_DEFAULT(i), DEC);
+      Serial.print(paramValueDefault(i), DEC);
       Serial.print(F(" read="));
       Serial.println(paramRead(i), DEC);
     }
   }
 }
 
-void paramInit(void) {
+void paramInit(void) { 
   paramDefaultCheck();
 }
 
@@ -312,9 +279,9 @@ void displayScreenConfig() {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
       // increase parameter value
       int16_t paramTemp = paramRead(configSelectIdx);
-      paramTemp += PARAM_STEP(configSelectIdx);
-      if (paramTemp > PARAM_MAX(configSelectIdx)) {
-        paramTemp = PARAM_MAX(configSelectIdx);
+      paramTemp += paramValueStep(configSelectIdx);
+      if (paramTemp > paramValueMax(configSelectIdx)) {
+        paramTemp = paramValueMax(configSelectIdx);
       }
       paramWrite(configSelectIdx, paramTemp);
     } else {
@@ -334,14 +301,14 @@ void displayScreenConfig() {
     if (UIMode == UI_SCREEN_CONFIG_EDIT) {
       // decrease parameter value
       int16_t paramTemp = paramRead(configSelectIdx);
-      paramTemp -= PARAM_STEP(configSelectIdx);
-      if (paramTemp < PARAM_MIN(configSelectIdx)) {
-        paramTemp = PARAM_MIN(configSelectIdx);
+      paramTemp -= paramValueStep(configSelectIdx);
+      if (paramTemp < paramValueMin(configSelectIdx)) {
+        paramTemp = paramValueMin(configSelectIdx);
       }
       paramWrite(configSelectIdx, paramTemp);
     } else {
       // next parameter
-      if (configSelectIdx < (PARAM_COUNT - 1)) {
+      if (configSelectIdx < (paramCount() - 1)) {
         configSelectIdx++;
         highlightPos = configSelectIdx - configScrollIdx;
         if (highlightPos >= SCREEN_CONFIG_ROWS) {
@@ -364,7 +331,7 @@ void displayScreenConfig() {
       display.setTextColor(WHITE);
     }
     //displayPrint_P((const char*)&configParams[configScrollIdx + i].name);
-    displayPrint_P(PARAM_NAME(configScrollIdx + i));
+    displayPrint_P(paramName(configScrollIdx + i));
     display.print(F(":"));
 
     int16_t paramPrint = paramRead(configScrollIdx + i);
