@@ -1,3 +1,6 @@
+#define ARDUINO_NANO
+//#define ARDUINO_PROMICRO
+
 #define MAGTYPE_EMPTY     0
 #define MAGTYPE_CLIP_6    1
 #define MAGTYPE_CLIP_10   4
@@ -99,14 +102,6 @@
 
 #define CONFIG_PARAM_NAME_SIZE 17
 
-#define PARAM_FLYWHEEL_MOTOR_ESC_RUN    0
-#define PARAM_FLYWHEEL_REVUP_TIME_SEMI  1
-#define PARAM_FLYWHEEL_REVUP_TIME_FULL  2
-#define PARAM_PLUNGER_PWM_RUN_SPEED     3
-#define PARAM_DART_LENGTH_MM            4
-#define PARAM_DISPLAY_DIM               5
-#define PARAM_RESET_ALL                 6
-
 typedef struct ConfigParam {
   const char name[CONFIG_PARAM_NAME_SIZE];
   const int16_t valueDefault;
@@ -122,6 +117,14 @@ int16_t paramValueMin(uint8_t idx);
 int16_t paramValueStep(uint8_t idx);
 const char* paramName(uint8_t idx);
 
+int16_t paramRead(uint8_t paramIdx);
+void paramWrite(uint8_t paramIdx, int16_t val);
+void paramDefaultCheck(void);
+void paramInit(void);
+
+int16_t paramReadDisplayDim(void);
+int16_t paramReadResetAll(void);
+int16_t paramReadInvertMag(void);
 
 //////// globals ////////
 extern float voltageBatteryAvg;
@@ -132,6 +135,11 @@ extern uint8_t roundsJamCount;
 extern int8_t roundCount;
 extern boolean jamDoorOpen;
 extern boolean feedJam;
+extern volatile unsigned long timeBarrelStart;
+extern volatile boolean timeBarrelStartFlag;
+extern volatile unsigned long timeBarrelEnd;
+extern volatile boolean timeBarrelEndFlag;
+
 
 
 
@@ -154,3 +162,4 @@ uint8_t magTypeReadBits(void);
 uint8_t magazineTypesGetCode(uint8_t magazineTypeIdx);
 uint8_t magazineTypesGetCapacity(uint8_t magazineTypeIdx);
 const char * magazineTypesGetName(uint8_t magazineTypeIdx);  
+int freeRam (void);  

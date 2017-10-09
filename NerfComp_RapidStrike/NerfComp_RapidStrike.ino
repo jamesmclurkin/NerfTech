@@ -1,5 +1,4 @@
-// NerfCommp control code
-
+// NerfCommp control code for RapidStrike
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -11,14 +10,14 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_MCP23008.h>
 
-#define ARDUINO_NANO
-//#define ARDUINO_PROMICRO
+
 
 #include <NerfComp.h>
 #include <NerfCompDisplay.h>
+#include <NerfCompIO.h>
 
 
-// global variables for main system stats
+// global variables for main system state
 uint8_t magazineType = MAGTYPE_EMPTY;
 uint8_t magazineTypeIdx = 0;
 int8_t roundCount = -1;
@@ -35,29 +34,31 @@ volatile boolean timeBarrelStartFlag = false;
 volatile unsigned long timeBarrelEnd = 0;
 volatile boolean timeBarrelEndFlag = false;
 
-//void displayUpdate(void);
-
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
 
-// create a servo object to control the flywheel ESC
-Servo servoESC;
 
+//////// configuration parameters for Rapidstrike ////////
+#define PARAM_FLYWHEEL_MOTOR_ESC_RUN    0
+#define PARAM_FLYWHEEL_REVUP_TIME_SEMI  1
+#define PARAM_FLYWHEEL_REVUP_TIME_FULL  2
+#define PARAM_PLUNGER_PWM_RUN_SPEED     3
+#define PARAM_DART_LENGTH_MM            4
+#define PARAM_DISPLAY_DIM               5
+#define PARAM_INVERT_MAG                6
+#define PARAM_RESET_ALL                 7
 
-// GPIO Port expander for mag type
-Adafruit_MCP23008 GPIO_mag;
-
-//////// configuration parameters ////////
 const ConfigParam configParams[] PROGMEM = {
   //012345678901234567890
 //("   System Config:XXXX"));
-  {"       Rev speed", FLYWHEEL_MOTOR_ESC_RUN,  100,  200, 5 },
-  {"   Rev time semi", FLYWHEEL_REVUP_TIME_SEMI,  0, 1000, 50},
-  {"   Rev time full", FLYWHEEL_REVUP_TIME_FULL,  0, 1000, 50},
-  {"   Plunger speed", PLUNGER_PWM_RUN_SPEED,    50,  250, 5 },
-  {"     Dart length", DART_LENGTH_MM,           10,  200, 1 },
-  {"     Display dim", 0,                         0,    1, 1 },
-  {"Reset to default", 0,                         0,    1, 1 },
+  {"       Rev speed", FLYWHEEL_MOTOR_ESC_RUN,  100,  200, 5 }, // 0
+  {"   Rev time semi", FLYWHEEL_REVUP_TIME_SEMI,  0, 1000, 50}, // 1
+  {"   Rev time full", FLYWHEEL_REVUP_TIME_FULL,  0, 1000, 50}, // 2
+  {"   Plunger speed", PLUNGER_PWM_RUN_SPEED,    50,  250, 5 }, // 3
+  {"     Dart length", DART_LENGTH_MM,           10,  200, 1 }, // 4
+  {"     Display dim", 0,                         0,    1, 1 }, // 5
+  {"      Invert mag", 0,                         0,    1, 1 }, // 6
+  {"    Reset config", 0,                         0,    1, 1 }, // 7
 };
 
 int8_t paramCount(void) {return sizeof(configParams)/sizeof(ConfigParam);}
@@ -65,154 +66,16 @@ int16_t paramValueDefault(uint8_t idx) {return (int16_t)pgm_read_word(&configPar
 int16_t paramValueMax(uint8_t idx)     {return (int16_t)pgm_read_word(&configParams[idx].valueMax);}
 int16_t paramValueMin(uint8_t idx)     {return (int16_t)pgm_read_word(&configParams[idx].valueMin);}
 int16_t paramValueStep(uint8_t idx)    {return (int16_t)pgm_read_word(&configParams[idx].valueStep);}
-const char* paramName(uint8_t idx) {return (const char*)&configParams[idx].name;}
+const char* paramName(uint8_t idx)     {return (const char*)&configParams[idx].name;}
 
-
-//////// I/O wrappers ////////
-boolean switchMagSafetyRead() {return !digitalRead(PIN_SAFETY_MAG); }
-boolean switchRevTriggerRead() {return !digitalRead(PIN_FLYWHEEL_TRIGGER); }
-boolean switchJamDoorRead() {return !digitalRead(PIN_SAFETY_JAMDOOR); }
-boolean switchTriggerRead() {return !digitalRead(PIN_PLUNGER_TRIGGER); }
-boolean switchPlungerStopRead() {return !digitalRead(PIN_PLUNGER_END_SWITCH); }
-boolean sensorBarrelRead() {return digitalRead(PIN_BARREL_START); }
-
-
-uint8_t flipLowNibble(uint8_t val) {
-  uint8_t rval = 0;
-  if(val & 0x01) {rval |= 0x08;}
-  if(val & 0x02) {rval |= 0x04;}
-  if(val & 0x04) {rval |= 0x02;}
-  if(val & 0x08) {rval |= 0x01;}
-  return rval;
-}
-
-uint8_t magTypeReadBits() {
-  uint8_t magTypeBits = MAGTYPE_EMPTY;
-  if (switchMagSafetyRead()) {
-    magTypeBits = GPIO_mag.readGPIO();
-    //mask and invert
-    magTypeBits = ((~magTypeBits) >> 4) & 0x0f;
-    //flip if needed
-    //magTypeBits = flipLowNibble(magTypeBits);
-  }
-  return magTypeBits;
-}
-
-uint8_t magazineTypeLookup(int magTypeBits) {
-  uint8_t typeIdx = 0;
-  uint8_t typeBitsTemp;
-
-  do {
-    //typeBitsTemp = pgm_read_byte(&magazineTypes[typeIdx].code);
-    typeBitsTemp = magazineTypesGetCode(typeIdx);
-    if ((typeBitsTemp == magTypeBits) || (typeBitsTemp == MAGTYPE_UNKNOWN)) {
-      // found the correct magazine type, or reached the end
-      // of the list.  break and return.
-      break;
-    }
-    typeIdx++;
-  } while (true);
-  return typeIdx;
-}
-
-
-#define BARREL_STATE_START                  0
-#define BARREL_STATE_END                    1
-#define BARREL_TIME_DART_INTERVAL_MAX_US    10000L
-#define BARREL_TIME_DART_LENGTH_MAX_US      1000L
-
-volatile uint8_t barrelIRQState = BARREL_STATE_START;
-
-void irqBarrelStart() {
-  //debug_barrelStart = true;
-  if (barrelIRQState == BARREL_STATE_START) {
-    unsigned long time = micros();
-    if (time > (timeBarrelStart + BARREL_TIME_DART_INTERVAL_MAX_US)) {
-      // rising edge = new dart, and it's been long enough that it's not a glitch
-      timeBarrelStart = time;
-      barrelIRQState = BARREL_STATE_END;
-      //debug_barrelStart_glitch = true;
-    }
-  }
-}
-
-void irqBarrelEnd() {
-  //debug_barrelEnd = true;
-  if (barrelIRQState == BARREL_STATE_END) {
-    unsigned long time = micros();
-    if (time > (timeBarrelStart + BARREL_TIME_DART_LENGTH_MAX_US)) {
-      // falling edge = end of the dart, and it's been long enough that it's not a glitch
-      timeBarrelEnd = time;
-      timeBarrelEndFlag = true;
-      barrelIRQState = BARREL_STATE_START;
-      //debug_barrelEnd_glitch = true;
-    }
-  }
-}
-
-
-//////// motor control ////////
-
-void plungerMotorPWM(int dir, int pwm) {
-  int dirFwd, dirRev;
-
-
-  switch (dir) {
-  case MOTOR_DIR_FWD: {dirFwd = HIGH; dirRev = LOW;} break;
-  case MOTOR_DIR_REV: {dirFwd = LOW; dirRev = HIGH;} break;
-  case MOTOR_DIR_BRAKE: {dirFwd = HIGH; dirRev = HIGH; } break;
-  case MOTOR_DIR_OFF: default: {dirFwd = LOW; dirRev = LOW; } break;
-  }
-
-  digitalWrite(PIN_PLUNGER_MOTOR_FWD, dirFwd);
-  digitalWrite(PIN_PLUNGER_MOTOR_REV, dirRev);
-  analogWrite(PIN_PLUNGER_MOTOR_PWM, pwm);
-}
-
-
-void plungerMotorInit(void) {
-  pinMode(PIN_PLUNGER_MOTOR_FWD, OUTPUT);
-  pinMode(PIN_PLUNGER_MOTOR_REV, OUTPUT);
-  pinMode(PIN_PLUNGER_MOTOR_PWM, OUTPUT);
-  plungerMotorPWM(MOTOR_DIR_OFF, 0);
-}
+int16_t paramReadDisplayDim(void)      {return paramRead(PARAM_DISPLAY_DIM);}
+int16_t paramReadResetAll(void)        {return paramRead(PARAM_RESET_ALL);}
+int16_t paramReadInvertMag(void)       {return paramRead(PARAM_INVERT_MAG);}
 
 
 //////// setup ////////
-int freeRam () {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
-
-
 void setup() {
-  // Setup the pins and interrupts for the barrel photo interrupters
-  pinMode(PIN_BARREL_START, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_BARREL_START), irqBarrelStart, RISING);
-
-  pinMode(PIN_BARREL_END, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_BARREL_END), irqBarrelEnd, FALLING);
-
-  // Setup the pins for internal sensing
-  pinMode(PIN_SAFETY_MAG, INPUT_PULLUP);
-  pinMode(PIN_FLYWHEEL_TRIGGER, INPUT_PULLUP);
-  pinMode(PIN_SAFETY_JAMDOOR, INPUT_PULLUP);
-  pinMode(PIN_PLUNGER_TRIGGER, INPUT_PULLUP);
-  pinMode(PIN_PLUNGER_END_SWITCH, INPUT_PULLUP);
-
-  // init the port expanders for mag type and HUD buttons
-  GPIO_mag.begin(0);      // GPIO magazine is on address 0
-  for (int i = 0; i < 8; ++i) {
-    GPIO_mag.pinMode(i, INPUT);
-    GPIO_mag.pullUp(i, HIGH);  // turn on a 100K pullup internally
-  }
-
-  plungerMotorInit();
-
-  // init the servo
-  servoESC.attach(PIN_FLYWHEEL_ESC); // attaches the servo on pin 9 to the servo object
-  servoESC.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);
+  gpioInit();
 
   // init the serial port for debugging output
   Serial.begin(115200);
@@ -305,7 +168,7 @@ void loop() {
     }
     //p = false;
     if (p) {Serial.print(F("hb "));}
-    if (p) {Serial.print(F("  magbits=")); Serial.print(GPIO_mag.readGPIO(), HEX); }
+    if (p) {Serial.print(F("  magbits=")); Serial.print(gpioGetMagSensorBits(), HEX); }
     if (p) {Serial.print(F("  uibits=")); Serial.print(displayGetButtonBits(), HEX); }
     if (p) {Serial.print(F("  rounds=")); Serial.print(roundCount, DEC); }
 
@@ -489,7 +352,7 @@ void loop() {
   }
 
 
-  servoESC.write(ESCPos);
+  servoESCWrite(ESCPos);
 
   if (p) {Serial.println(F(""));}
 

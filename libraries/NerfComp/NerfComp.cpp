@@ -52,3 +52,44 @@ void SerialPrint_F (const char * str) {
     Serial.print (c);
 }
 
+int16_t paramRead(uint8_t paramIdx) {
+  uint16_t val;
+  val = (uint16_t)EEPROM.read(paramIdx * sizeof(int16_t));
+  val |= ((uint16_t)(EEPROM.read(paramIdx * sizeof(int16_t) + 1)) << 8);
+  return (int16_t)val;
+}
+
+void paramWrite(uint8_t paramIdx, int16_t val) {
+  int16_t valRead = paramRead(paramIdx);
+  if (valRead != val) {
+    EEPROM.write(paramIdx * sizeof(int16_t), (uint8_t)((uint16_t)val & 0x00FF));
+    EEPROM.write(paramIdx * sizeof(int16_t) + 1, (uint8_t)((uint16_t)val >> 8));
+  }
+}
+
+void paramDefaultCheck(void) {
+  if (paramReadResetAll() != 0) {
+    // parameters need to be initialiszed or reset.
+    // Copy default values from flash.
+    for(uint8_t i = 0; i < paramCount(); i++) {
+      paramWrite(i, paramValueDefault(i));
+
+      Serial.print(F(" param:"));
+      SerialPrint_F(paramName(i));
+      Serial.print(F(" default="));
+      Serial.print(paramValueDefault(i), DEC);
+      Serial.print(F(" read="));
+      Serial.println(paramRead(i), DEC);
+    }
+  }
+}
+
+void paramInit(void) { 
+  paramDefaultCheck();
+}
+
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
