@@ -11,6 +11,11 @@
 
 #include <NerfComp.h>
 
+///////// graphics ////////
+#include <SevenSegmentBitmaps.h>
+#include <NerfLogo.h>
+
+
 #define MENU_ITEM_NAME_SIZE 12
 
 #define UI_SCREEN_HUD         0

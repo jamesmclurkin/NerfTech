@@ -143,10 +143,6 @@ extern volatile boolean timeBarrelEndFlag;
 
 
 
-///////// graphics ////////
-#include <SevenSegmentBitmaps.h>
-#include <NerfLogo.h>
-
 //////// function declarations ////////
 void paramInit(void);
 int16_t paramRead(uint8_t paramIdx);

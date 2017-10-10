@@ -10,14 +10,12 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_MCP23008.h>
 
-
-
 #include <NerfComp.h>
 #include <NerfCompDisplay.h>
 #include <NerfCompIO.h>
 
 
-// global variables for main system state
+//////// global variables for main system state ////////
 uint8_t magazineType = MAGTYPE_EMPTY;
 uint8_t magazineTypeIdx = 0;
 int8_t roundCount = -1;
@@ -95,10 +93,10 @@ void setup() {
 }
 
 
+//////// Loop ////////
 int plungerState = PLUNGER_STATE_IDLE;
 unsigned long plungerStateTime;
 unsigned long displayUpdateTime = 0;
-
 boolean sp = true;
 
 void loop() {
@@ -350,7 +348,6 @@ void loop() {
     break;
   }
   }
-
 
   servoESCWrite(ESCPos);
 
