@@ -128,6 +128,7 @@ int16_t paramReadInvertMag(void);
 
 //////// globals ////////
 extern float voltageBatteryAvg;
+extern uint8_t magazineType;
 extern uint8_t magazineTypeIdx;
 extern int16_t roundsPerMin;
 extern float velocity;

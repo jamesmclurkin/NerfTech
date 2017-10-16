@@ -1,4 +1,4 @@
-// NerfCommp control code for RapidStrike
+// NerfComp control code for RapidStrike
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -77,9 +77,8 @@ void setup() {
 
   // init the serial port for debugging output
   Serial.begin(115200);
-  Serial.println(F(" NerfComp: RapidStrike ver 0.6"));
+  Serial.println(F(" NerfComp: RapidStrike ver 0.7"));
   Serial.print(F("   Free RAM:")); Serial.print(freeRam()); Serial.println(F(" bytes"));
-
 
   // init the config Parameters
   paramInit();
@@ -100,8 +99,6 @@ unsigned long displayUpdateTime = 0;
 boolean sp = true;
 
 void loop() {
-  static int magazineTypeCounter;
-  static boolean magazineNew = false;
   static unsigned long roundTimePrev = 0;
 
   boolean displayUpdateEnable = true;
@@ -156,7 +153,7 @@ void loop() {
   }
 
 
-  // read the motor voltage every 100ms
+  // read the battery voltage every 100ms
   boolean p = false;
   if (millis() > heartbeatUpdateTime) {
     heartbeatUpdateTime += HEARTBEAT_UPDATE_PERIOD;
@@ -171,78 +168,24 @@ void loop() {
     if (p) {Serial.print(F("  rounds=")); Serial.print(roundCount, DEC); }
 
 
-    // update the motor voltage
-    int voltageBatteryRaw = analogRead(PIN_BATTERY_VOLTAGE);
-    float voltageBatteryTemp = (float) voltageBatteryRaw * VOLTAGE_BATTERY_SCALER;
-
-    if (p) {Serial.print(F("  vbat=")); Serial.print(voltageBatteryRaw, DEC); }
-    if (p) {Serial.print(F(",")); Serial.print(voltageBatteryTemp, 2); }
-    // add some sanity checks to the voltage
-    if ((voltageBatteryTemp >= VOLTAGE_MIN) && (voltageBatteryTemp <= VOLTAGE_MAX)) {
-      // compute a IIR low-pass filter
-      voltageBatteryAvg = VOLTAGE_BATTERY_IIR_GAIN * voltageBatteryTemp + (1 - VOLTAGE_BATTERY_IIR_GAIN) * voltageBatteryAvg;
-    }
-
+    // update the battery voltage
+    batteryVoltageUpdate(p);
 
     // check the magazine type
-    uint8_t magazineTypeTemp = magTypeReadBits();
-    if (p) {Serial.print(F("  mag=")); Serial.print(magazineTypeTemp, DEC); }
-    if (magazineType != magazineTypeTemp) {
-      magazineTypeCounter = 0;
-      magazineNew = true;
-    } else {
-      if (magazineTypeCounter < MAGAZINE_TYPE_DELAY) {
-        magazineTypeCounter++;
-      } else {
-        if (magazineNew) {
-          magazineTypeIdx = magazineTypeLookup(magazineTypeTemp);
-          //roundCount = pgm_read_byte(&magazineTypes[magazineTypeIdx].capacity);
-          roundCount = magazineTypesGetCapacity(magazineTypeIdx);
-          roundsJamCount = 0;
-          magazineNew = false;
-          Serial.println(F("")); Serial.print(F("(new magazine "));
-          //SerialPrint_F(magazineTypes[magazineTypeIdx].name); Serial.println(F(")"));
-          SerialPrint_F(magazineTypesGetName(magazineTypeIdx)); Serial.println(F(")"));          
-        }
-      }
-    }
-    magazineType = magazineTypeTemp;
-    //if (p) {Serial.print(F(",")); SerialPrint_F(magazineTypes[magazineTypeIdx].name);}
-    if (p) {Serial.print(F(",")); SerialPrint_F(magazineTypesGetName(magazineTypeIdx));}
-
+    magazineTypeUpdate(p);
 
     // check the jam door
-    if ((magazineType != MAGTYPE_EMPTY) && (magazineTypeCounter == MAGAZINE_TYPE_DELAY)) {
-      boolean jamDoorOpenTemp = switchJamDoorRead();
-      if (p) {Serial.print(F(" jamdoor=")); Serial.print(jamDoorOpenTemp);}
-      if (jamDoorOpen != jamDoorOpenTemp) {
-        if (jamDoorOpenTemp) {
-          // jam door has gone from closed to open.  inc the jam count
-          // clear the feed jam indicator if it was set
-          roundsJamCount++;
-          feedJam = false;
-        } else {
-          // jam door has gone from open to closed.  decrement a round
-          if (roundCount > 0) {
-            roundCount--;
-          }
-        }
-        jamDoorOpen = jamDoorOpenTemp;
-      }
-    } else {
-      jamDoorOpen = false;
-    }
+    jamDoorUpdate(p);
 
     // read the UI Buttons
     buttonUpdateEvents();
-
+  }
 //    if (p) {Serial.print(F(" mag=")); Serial.print(magazineSwitchRead());}
-//    if (p) {Serial.print(F(" revTrig=")); Serial.print(revTriggerRead());}
 //    if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
+//    if (p) {Serial.print(F(" rev=")); Serial.print(revTriggerRead());}
 //    if (p) {Serial.print(F(" trig=")); Serial.print(triggerRead());}
 //    if (p) {Serial.print(F(" plunger=")); Serial.print(plungerEndRead());}
 
-}
 
   //if (magazineSwitchRead() && jamDoorRead()) {
   // Safety switches are ok.  process the rev and fire triggers

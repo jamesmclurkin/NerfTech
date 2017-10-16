@@ -18,6 +18,9 @@ Adafruit_MCP23008 GPIO_mag;
 // servo object to control the flywheel ESC
 Servo servoESC;
 
+uint8_t magazineTypeCounter;
+boolean magazineNew = false;
+
 //////// I/O wrappers ////////
 boolean switchMagSafetyRead() {return !digitalRead(PIN_SAFETY_MAG); }
 boolean switchRevTriggerRead() {return !digitalRead(PIN_FLYWHEEL_TRIGGER); }
@@ -27,6 +30,31 @@ boolean switchPlungerStopRead() {return !digitalRead(PIN_PLUNGER_END_SWITCH); }
 boolean sensorBarrelRead() {return digitalRead(PIN_BARREL_START); }
 
 
+//////// jam door sensor ////////
+void jamDoorUpdate(boolean p) {
+  if ((magazineType != MAGTYPE_EMPTY) && (magazineTypeCounter == MAGAZINE_TYPE_DELAY)) {
+    boolean jamDoorOpenTemp = switchJamDoorRead();
+    if (p) {Serial.print(F(" jamdoor=")); Serial.print(jamDoorOpenTemp);}
+    if (jamDoorOpen != jamDoorOpenTemp) {
+      if (jamDoorOpenTemp) {
+        // jam door has gone from closed to open.  inc the jam count
+        // clear the feed jam indicator if it was set
+        roundsJamCount++;
+        feedJam = false;
+      } else {
+        // jam door has gone from open to closed.  decrement a round
+        if (roundCount > 0) {
+          roundCount--;
+        }
+      }
+      jamDoorOpen = jamDoorOpenTemp;
+    }
+  } else {
+    jamDoorOpen = false;
+  }
+}
+  
+//////// magazine type sensor ////////
 uint8_t flipLowNibble(uint8_t val) {
   uint8_t rval = 0;
   if(val & 0x01) {rval |= 0x08;}
@@ -67,7 +95,51 @@ uint8_t magazineTypeLookup(uint8_t magTypeBits) {
   return typeIdx;
 }
 
+void magazineTypeUpdate(boolean p) {
+  uint8_t magazineTypeTemp = magTypeReadBits();
+  if (p) {Serial.print(F("  mag=")); Serial.print(magazineTypeTemp, DEC); }
+  if (magazineType != magazineTypeTemp) {
+    magazineTypeCounter = 0;
+    magazineNew = true;
+  } else {
+    if (magazineTypeCounter < MAGAZINE_TYPE_DELAY) {
+      magazineTypeCounter++;
+    } else {
+      if (magazineNew) {
+        magazineTypeIdx = magazineTypeLookup(magazineTypeTemp);
+        //roundCount = pgm_read_byte(&magazineTypes[magazineTypeIdx].capacity);
+        roundCount = magazineTypesGetCapacity(magazineTypeIdx);
+        roundsJamCount = 0;
+        magazineNew = false;
+        Serial.println(F("")); Serial.print(F("(new magazine "));
+        //SerialPrint_F(magazineTypes[magazineTypeIdx].name); Serial.println(F(")"));
+        SerialPrint_F(magazineTypesGetName(magazineTypeIdx)); Serial.println(F(")"));          
+      }
+    }
+  }
+  magazineType = magazineTypeTemp;
+  //if (p) {Serial.print(F(",")); SerialPrint_F(magazineTypes[magazineTypeIdx].name);}
+  if (p) {Serial.print(F(",")); SerialPrint_F(magazineTypesGetName(magazineTypeIdx));}
+}
+  
 
+//////// battery Voltage ////////
+void batteryVoltageUpdate(boolean p) {
+    int voltageBatteryRaw = analogRead(PIN_BATTERY_VOLTAGE);
+    float voltageBatteryTemp = (float) voltageBatteryRaw * VOLTAGE_BATTERY_SCALER;
+
+    if (p) {Serial.print(F("  vbat=")); Serial.print(voltageBatteryRaw, DEC); }
+    if (p) {Serial.print(F(",")); Serial.print(voltageBatteryTemp, 2); }
+    // add some sanity checks to the voltage
+    if ((voltageBatteryTemp >= VOLTAGE_MIN) && (voltageBatteryTemp <= VOLTAGE_MAX)) {
+      // compute a IIR low-pass filter
+      voltageBatteryAvg = VOLTAGE_BATTERY_IIR_GAIN * voltageBatteryTemp + (1 - VOLTAGE_BATTERY_IIR_GAIN) * voltageBatteryAvg;
+    }
+}
+  
+
+
+//////// barrel sensor ////////
 #define BARREL_STATE_START                  0
 #define BARREL_STATE_END                    1
 #define BARREL_TIME_DART_INTERVAL_MAX_US    10000L
