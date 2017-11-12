@@ -1,5 +1,8 @@
-#define ARDUINO_NANO
-//#define ARDUINO_PROMICRO
+#ifndef NerfComp_h
+#define NerfComp_h
+
+//#define ARDUINO_NANO
+#define ARDUINO_PROMICRO
 
 #define MAGTYPE_EMPTY     0
 #define MAGTYPE_CLIP_6    1
@@ -94,6 +97,7 @@
 
 
 #define DISPLAY_UPDATE_PERIOD 100
+#define BARREL_INTER_DART_TIME_US   10000L
 
 #define SET_PLUNGER_STATE(s)  plungerState = s;plungerStateTime = millis();sp=true
 #define STATE_DELAY(t)      ((millis() - plungerStateTime) > t)
@@ -160,3 +164,5 @@ uint8_t magazineTypesGetCode(uint8_t magazineTypeIdx);
 uint8_t magazineTypesGetCapacity(uint8_t magazineTypeIdx);
 const char * magazineTypesGetName(uint8_t magazineTypeIdx);  
 int freeRam (void);  
+
+#endif // NerfComp_h

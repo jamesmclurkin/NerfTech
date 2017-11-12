@@ -154,7 +154,7 @@ void loop() {
           }
         }
       }
-      roundTimePrev = roundTimeh;
+      roundTimePrev = roundTime;
       Serial.println(F(""));
     }
   }
