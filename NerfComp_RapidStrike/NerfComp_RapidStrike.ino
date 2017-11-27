@@ -10,9 +10,9 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_MCP23008.h>
 
-#include <NerfComp.h>
-#include <NerfCompDisplay.h>
-#include <NerfCompIO.h>
+#include "NerfComp.h"
+#include "NerfCompDisplay.h"
+#include "NerfCompIO.h"
 
 
 //////// global variables for main system state ////////
@@ -25,15 +25,6 @@ float velocity = -1;
 float voltageBatteryAvg = 0.0;
 boolean jamDoorOpen = false;
 boolean feedJam = false;
-
-volatile unsigned long timeBarrelStart = 0;
-volatile boolean timeBarrelStartFlag = false;
-
-volatile unsigned long timeBarrelEnd = 0;
-volatile boolean timeBarrelEndFlag = false;
-
-unsigned long heartbeatUpdateTime = 0;
-unsigned long heartbeatPrintTime = 0;
 
 
 //////// configuration parameters for Rapidstrike ////////
@@ -83,12 +74,11 @@ void setup() {
   // init the config Parameters
   paramInit();
 
-  // init the LED Display
+  // init the OLED Display
   displayInit();
 
   // reset the heartbeat time to avoid a bunch of initial updates
-  heartbeatUpdateTime = millis();
-  heartbeatPrintTime = heartbeatUpdateTime;
+  heartbeatInit();
 }
 
 
@@ -99,93 +89,13 @@ unsigned long displayUpdateTime = 0;
 boolean sp = true;
 
 void loop() {
-  static unsigned long roundTimePrev = 0;
-
   boolean displayUpdateEnable = true;
   boolean displayUpdateForce = false;
 
-  // look for a dart at the end of the barrel
-  if (timeBarrelEndFlag) {
-    timeBarrelEndFlag = false;
-    if (roundCount > 0) {
-      Serial.print(F("round=")); Serial.print(roundCount, DEC);
-      roundCount--;
-      // compute time of flight in microseconds
-      unsigned long time = timeBarrelEnd - timeBarrelStart;
-      Serial.print(F(" time=")); Serial.print(time, DEC);
+  // look for a dart past the barrel sensor and update the rounds
+  dartCheck();    
 
-      // compute velocity in feet/sec. apply some sanity checks
-      if (time > 0) {
-        float velocityTemp = (DART_LENGTH_INCHES * 1000000) / (12 * (float) time);
-        Serial.print(F(" vel=")); Serial.print(velocityTemp, 1);
-        //if ((velocityTemp < VELOCITY_FPS_MIN) || (velocityTemp > VELOCITY_FPS_MAX)) {
-        if ((velocityTemp > VELOCITY_FPS_MAX)) {
-          // velocity error
-          velocity = -1.0;
-        } else {
-          velocity = velocityTemp;
-        }
-      } else {
-        // time <= 0.  time error => velocity error.
-        velocity = -1.0;
-      }
-      // compute rounds per minute for bursts
-      unsigned long roundTime = millis();
-      if (roundTimePrev != 0) {
-        unsigned long roundTimeDelta = roundTime - roundTimePrev;
-        if (roundTimeDelta > 0) {
-          // rounds per minute =
-          unsigned long rpmTemp = 60000ul / roundTimeDelta;
-          Serial.print(F(" delta=")); Serial.print(roundTimeDelta, DEC);
-          Serial.print(F(",rpm=")); Serial.print(rpmTemp, DEC);
-          if (rpmTemp > 60) {
-            roundsPerMin = (int) rpmTemp;
-          } else {
-            // too slow a rate of fire to matter.  single shot
-            // clear the rd/min display
-            roundsPerMin = -1;
-          }
-        }
-      }
-      roundTimePrev = roundTime;
-      Serial.println(F(""));
-    }
-  }
-
-
-  // read the battery voltage every 100ms
-  boolean p = false;
-  if (millis() > heartbeatUpdateTime) {
-    heartbeatUpdateTime += HEARTBEAT_UPDATE_PERIOD;
-    if (millis() > heartbeatPrintTime) {
-      heartbeatPrintTime += HEARTBEAT_PRINT_PERIOD;
-      p = true;
-    }
-    //p = false;
-    if (p) {Serial.print(F("hb "));}
-    if (p) {Serial.print(F("  magbits=")); Serial.print(gpioGetMagSensorBits(), HEX); }
-    if (p) {Serial.print(F("  uibits=")); Serial.print(displayGetButtonBits(), HEX); }
-    if (p) {Serial.print(F("  rounds=")); Serial.print(roundCount, DEC); }
-
-
-    // update the battery voltage
-    batteryVoltageUpdate(p);
-
-    // check the magazine type
-    magazineTypeUpdate(p);
-
-    // check the jam door
-    jamDoorUpdate(p);
-
-    // read the UI Buttons
-    buttonUpdateEvents();
-  }
-//    if (p) {Serial.print(F(" mag=")); Serial.print(magazineSwitchRead());}
-//    if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
-//    if (p) {Serial.print(F(" rev=")); Serial.print(revTriggerRead());}
-//    if (p) {Serial.print(F(" trig=")); Serial.print(triggerRead());}
-//    if (p) {Serial.print(F(" plunger=")); Serial.print(plungerEndRead());}
-
+  boolean p = heartbeatUpdate();
 
   //if (magazineSwitchRead() && jamDoorRead()) {
   // Safety switches are ok.  process the rev and fire triggers

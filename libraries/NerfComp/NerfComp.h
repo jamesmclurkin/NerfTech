@@ -140,10 +140,10 @@ extern uint8_t roundsJamCount;
 extern int8_t roundCount;
 extern boolean jamDoorOpen;
 extern boolean feedJam;
-extern volatile unsigned long timeBarrelStart;
-extern volatile boolean timeBarrelStartFlag;
-extern volatile unsigned long timeBarrelEnd;
-extern volatile boolean timeBarrelEndFlag;
+// extern volatile unsigned long timeBarrelStart;
+// extern volatile boolean timeBarrelStartFlag;
+// extern volatile unsigned long timeBarrelEnd;
+// extern volatile boolean timeBarrelEndFlag;
 
 
 
@@ -165,4 +165,7 @@ uint8_t magazineTypesGetCapacity(uint8_t magazineTypeIdx);
 const char * magazineTypesGetName(uint8_t magazineTypeIdx);  
 int freeRam (void);  
 
+void heartbeatInit(void);  
+boolean heartbeatUpdate(void);
+  
 #endif // NerfComp_h

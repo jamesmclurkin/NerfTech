@@ -291,7 +291,7 @@ void displayScreenConfig() {
   }
 
   // draw the config screen
-  screenDrawTitle((const char *)F("System Config"));
+  screenDrawTitle((const char *)F("Config"));
   for(uint8_t i = 0; i < SCREEN_CONFIG_ROWS; i++) {
     //Compute which screen line to highlight
     if ((UIMode == UI_SCREEN_CONFIG) && (i == highlightPos)) {
@@ -317,7 +317,6 @@ void displayScreenConfig() {
   }
 }
 
-
 void displayScreenDiag() {
   // dispay the diagnostic screen
   switch (buttonEventGet()) {
@@ -325,16 +324,29 @@ void displayScreenDiag() {
     //Go back to menu screen
     UIMode = UI_SCREEN_MENU;
     break;
-    }
+  }
+  case BUTTON_EVENT_SHORT_UP: {
+    // up = test rev motor
+    break;
+  }
+  case BUTTON_EVENT_SHORT_SELECT: {
+    // select = plunger dc motor
+    break;
+  }
+  case BUTTON_EVENT_SHORT_DOWN: {
+    // down = plunger servo motor
+    break;
+  }
   }
 
   // draw screen
-  screenDrawTitle((const char *)F("System Diagonstic"));
+  screenDrawTitle((const char *)F("Diagonstic"));
 
   display.print(F("Volt=")); display.println(voltageBatteryAvg, 1);
   display.print(F("Rev=")); printBit(switchRevTriggerRead()); display.print(F(" "));
   display.print(F("Tgr=")); printBit(switchTriggerRead()); display.print(F(" "));
   display.print(F("Brl=")); printBit(sensorBarrelRead()); display.println(F(""));
+  display.print(F("Png=")); printBit(switchPlungerStopRead()); display.println(F(""));
   display.print(F("Jam=")); printBit(switchJamDoorRead()); display.print(F(" "));
   display.print(F("Mag=")); printBit(switchMagSafetyRead()); display.println(F(""));
   display.print(F("MagBits="));
@@ -344,7 +356,6 @@ void displayScreenDiag() {
     printBit(bitRead(bits, 2));
     printBit(bitRead(bits, 3));
     display.print(F("="));
-    //displayPrint_P(magazineTypes[magazineTypeIdx].name); display.println(F(""));
     displayPrint_P(magazineTypesGetName(magazineTypeIdx)); display.println(F(""));
   }
 

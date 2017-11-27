@@ -9,7 +9,9 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_MCP23008.h>
 
-#include <NerfComp.h>
+#include "NerfComp.h"
+#include "NerfCompDisplay.h"
+#include "NerfCompIO.h"
 
 typedef struct MagazineType {
   const uint8_t code;
@@ -92,4 +94,49 @@ int freeRam () {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
+void nerfCompSetup(void) {
+
+}
+
+
+unsigned long heartbeatUpdateTime = 0;
+unsigned long heartbeatPrintTime = 0;
+
+// reset the heartbeat time to avoid a bunch of initial updates
+void heartbeatInit(void) {
+  heartbeatUpdateTime = millis();
+  heartbeatPrintTime = heartbeatUpdateTime;
+}
+
+boolean heartbeatUpdate(void) {
+    // read the battery voltage every 100ms
+  boolean p = false;
+  if (millis() > heartbeatUpdateTime) {
+    heartbeatUpdateTime += HEARTBEAT_UPDATE_PERIOD;
+    if (millis() > heartbeatPrintTime) {
+      heartbeatPrintTime += HEARTBEAT_PRINT_PERIOD;
+      p = true;
+    }
+    //p = false;
+    if (p) {Serial.print(F("hb "));}
+    if (p) {Serial.print(F("  magbits=")); Serial.print(gpioGetMagSensorBits(), HEX); }
+    if (p) {Serial.print(F("  uibits=")); Serial.print(displayGetButtonBits(), HEX); }
+    if (p) {Serial.print(F("  rounds=")); Serial.print(roundCount, DEC); }
+
+
+    // update the battery voltage
+    batteryVoltageUpdate(p);
+
+    // check the magazine type
+    magazineTypeUpdate(p);
+
+    // check the jam door
+    jamDoorUpdate(p);
+
+    // read the UI Buttons
+    buttonUpdateEvents();
+  }
+  return p;  
 }

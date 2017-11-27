@@ -147,6 +147,12 @@ void batteryVoltageUpdate(boolean p) {
 
 volatile uint8_t barrelIRQState = BARREL_STATE_START;
 
+volatile unsigned long timeBarrelStart = 0;
+volatile boolean timeBarrelStartFlag = false;
+
+volatile unsigned long timeBarrelEnd = 0;
+volatile boolean timeBarrelEndFlag = false;
+
 void irqBarrelStart() {
   //debug_barrelStart = true;
   if (barrelIRQState == BARREL_STATE_START) {
@@ -172,6 +178,59 @@ void irqBarrelEnd() {
       //debug_barrelEnd_glitch = true;
     }
   }
+}
+
+
+// look for a dart past the barrel sensor and update the rounds
+void dartCheck(void) {
+  static unsigned long roundTimePrev = 0;
+  
+  if (timeBarrelEndFlag) {
+    timeBarrelEndFlag = false;
+    if (roundCount > 0) {
+      Serial.print(F("round=")); Serial.print(roundCount, DEC);
+      roundCount--;
+      // compute time of flight in microseconds
+      unsigned long time = timeBarrelEnd - timeBarrelStart;
+      Serial.print(F(" time=")); Serial.print(time, DEC);
+
+      // compute velocity in feet/sec. apply some sanity checks
+      if (time > 0) {
+        float velocityTemp = (DART_LENGTH_INCHES * 1000000) / (12 * (float) time);
+        Serial.print(F(" vel=")); Serial.print(velocityTemp, 1);
+        //if ((velocityTemp < VELOCITY_FPS_MIN) || (velocityTemp > VELOCITY_FPS_MAX)) {
+        if ((velocityTemp > VELOCITY_FPS_MAX)) {
+          // velocity error
+          velocity = -1.0;
+        } else {
+          velocity = velocityTemp;
+        }
+      } else {
+        // time <= 0.  time error => velocity error.
+        velocity = -1.0;
+      }
+      // compute rounds per minute for bursts
+      unsigned long roundTime = millis();
+      if (roundTimePrev != 0) {
+        unsigned long roundTimeDelta = roundTime - roundTimePrev;
+        if (roundTimeDelta > 0) {
+          // rounds per minute =
+          unsigned long rpmTemp = 60000ul / roundTimeDelta;
+          Serial.print(F(" delta=")); Serial.print(roundTimeDelta, DEC);
+          Serial.print(F(",rpm=")); Serial.print(rpmTemp, DEC);
+          if (rpmTemp > 60) {
+            roundsPerMin = (int) rpmTemp;
+          } else {
+            // too slow a rate of fire to matter.  single shot
+            // clear the rd/min display
+            roundsPerMin = -1;
+          }
+        }
+      }
+      roundTimePrev = roundTime;
+      Serial.println(F(""));
+    }
+  }  
 }
 
 

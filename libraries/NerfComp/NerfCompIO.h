@@ -9,5 +9,6 @@ void servoESCWrite(int ESCPos);
 void batteryVoltageUpdate(boolean p);    
 void magazineTypeUpdate(boolean p);
 void jamDoorUpdate(boolean p);
+void dartCheck(void);
 
 #endif // NerfCompIO_h
