@@ -82,21 +82,12 @@ void setup() {
 }
 
 
-//////// Loop ////////
-int plungerState = PLUNGER_STATE_IDLE;
-unsigned long plungerStateTime;
-unsigned long displayUpdateTime = 0;
-boolean sp = true;
 
-void loop() {
-  boolean displayUpdateEnable = true;
-  boolean displayUpdateForce = false;
-
-  // look for a dart past the barrel sensor and update the rounds
-  dartCheck();    
-
-  boolean p = heartbeatUpdate();
-
+void FSM_RapidStrike(boolean p) {
+  static boolean sp = true;
+  static unsigned long plungerStateTime;
+  static int plungerState = PLUNGER_STATE_IDLE;
+  
   //if (magazineSwitchRead() && jamDoorRead()) {
   // Safety switches are ok.  process the rev and fire triggers
 
@@ -120,7 +111,7 @@ void loop() {
     if (sp) {Serial.println(F(" s:revup")); sp = false;}
     plungerMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
     ESCPos = FLYWHEEL_MOTOR_ESC_REVUP;
-    displayUpdateEnable = false;
+    displayUpdateEnable(false);
     unsigned long revTime;
     if (switchRevTriggerRead()) {
       revTime = paramRead(PARAM_FLYWHEEL_REVUP_TIME_FULL);
@@ -136,7 +127,7 @@ void loop() {
     if (sp) {Serial.println(F(" s:clear")); sp = false;}
     plungerMotorPWM(MOTOR_DIR_FWD, paramRead(PARAM_PLUNGER_PWM_RUN_SPEED));
     ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
-    displayUpdateEnable = false;
+    displayUpdateEnable(false);
     if (!switchPlungerStopRead()) {
       SET_PLUNGER_STATE(PLUNGER_STATE_RUN_PLUNGER);
       //displayUpdateForce = true;
@@ -151,7 +142,7 @@ void loop() {
     if (sp) {Serial.println(F(" s:run")); sp = false;}
     plungerMotorPWM(MOTOR_DIR_FWD, paramRead(PARAM_PLUNGER_PWM_RUN_SPEED));
     ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
-    displayUpdateEnable = false;
+    displayUpdateEnable(false);
     if (switchPlungerStopRead() && STATE_DELAY(25)) {
       // plunger is at end.  stop it if we're in semi-auto
       if (!switchRevTriggerRead()) {
@@ -172,7 +163,7 @@ void loop() {
     plungerMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
     // full auto.  leave the flywheel spinning
     ESCPos = paramRead(PARAM_FLYWHEEL_MOTOR_ESC_RUN);
-    displayUpdateEnable = false;
+    displayUpdateEnable(false);
     if ((millis() - plungerStateTime) > ROUND_DELAY_TIME) {
       //displayUpdateForce = true;
       if (switchTriggerRead()) {
@@ -194,7 +185,7 @@ void loop() {
     if (sp) {Serial.println(F(" s:release")); sp = false;}
     plungerMotorPWM(MOTOR_DIR_BRAKE, PLUNGER_PWM_MAX);
     ESCPos = FLYWHEEL_MOTOR_ESC_BRAKE;
-    displayUpdateEnable = false;
+    displayUpdateEnable(false);
     if (!switchTriggerRead()) {
       SET_PLUNGER_STATE(PLUNGER_STATE_IDLE);
     }
@@ -205,11 +196,19 @@ void loop() {
   servoESCWrite(ESCPos);
 
   if (p) {Serial.println(F(""));}
+}
 
-  if (((millis() > (displayUpdateTime + DISPLAY_UPDATE_PERIOD))
-      & displayUpdateEnable) || displayUpdateForce) {
-    displayUpdateTime = millis();
-    displayUpdateForce = false;
-    displayUpdate();
-  }
+
+//////// Loop ////////
+void loop() {
+
+  // look for a dart past the barrel sensor and update the rounds
+  dartCheck();    
+
+  // Update the heartbeat housekeeping
+  boolean printStatus = heartbeatUpdate();
+
+  // run te blaster control FSM
+  FSM_RapidStrike(printStatus);
+
 }

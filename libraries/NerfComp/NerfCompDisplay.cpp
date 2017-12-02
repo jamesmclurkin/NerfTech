@@ -433,27 +433,44 @@ void displayScreenHUD() {
   }
 }
 
+boolean updateEnable = true;
+boolean updateForce = false;
+unsigned long updateTime = 0;
+
+void displayUpdateEnable(boolean val) {
+  updateEnable = val;
+}
+
+void displayUpdateForce(boolean val) {
+  updateForce = val;
+}
 
 void displayUpdate() {
-  display.dim(paramReadDisplayDim());
+  
+  if (((millis() > (updateTime + DISPLAY_UPDATE_PERIOD)) & updateEnable) || updateForce) {
+    updateTime = millis();
+    updateForce = false;
+    
+    display.dim(paramReadDisplayDim());
 
-  switch (UIMode) {
-  case UI_SCREEN_CONFIG:
-  case UI_SCREEN_CONFIG_EDIT:
-    displayScreenConfig();
-    break;
-  case UI_SCREEN_DIAGNOSTIC:
-    displayScreenDiag();
-    break;
-  case UI_SCREEN_MENU:
-    displayScreenMenu();
-    break;
-  default:
-  case UI_SCREEN_HUD:
-    displayScreenHUD();
-    break;
+    switch (UIMode) {
+    case UI_SCREEN_CONFIG:
+    case UI_SCREEN_CONFIG_EDIT:
+      displayScreenConfig();
+      break;
+    case UI_SCREEN_DIAGNOSTIC:
+      displayScreenDiag();
+      break;
+    case UI_SCREEN_MENU:
+      displayScreenMenu();
+      break;
+    default:
+    case UI_SCREEN_HUD:
+      displayScreenHUD();
+      break;
+    }
+    display.display();
   }
-  display.display();
 }
 
 void displayInit() {
