@@ -449,7 +449,6 @@ void displayUpdate() {
   
   if (((millis() > (updateTime + DISPLAY_UPDATE_PERIOD)) & updateEnable) || updateForce) {
     updateTime = millis();
-    updateForce = false;
     
     display.dim(paramReadDisplayDim());
 
@@ -470,6 +469,7 @@ void displayUpdate() {
       break;
     }
     display.display();
+    updateForce = false;
   }
 }
 

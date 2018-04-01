@@ -88,6 +88,7 @@ void FSM_RapidStrike(boolean p) {
   static unsigned long plungerStateTime;
   static int plungerState = PLUNGER_STATE_IDLE;
   
+  displayUpdateEnable(true);
   //if (magazineSwitchRead() && jamDoorRead()) {
   // Safety switches are ok.  process the rev and fire triggers
 
