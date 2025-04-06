@@ -1,6 +1,0 @@
-Add the following line to:
-
-C:\Dev\CodeBlocks\arduino\hardware\arduino\cores\arduino\Arduino.h @144
-C:\Dev\CodeBlocks\ardusim\arduino\cores\Arduino.h @154
-
-#define digitalPinToInterrupt(P) (P)
