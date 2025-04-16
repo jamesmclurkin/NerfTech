@@ -2,5 +2,5 @@
     "configuration": "cache=on,speed=120,opt=small,maxqspi=50,usbstack=arduino,debug=off",
     "board": "adafruit:samd:adafruit_itsybitsy_m4",
     "sketch": "Stryfe_Solenoid/Stryfe_Solenoid.ino",
-    "port": "/dev/ttyACM1"
+    "port": "/dev/ttyACM0"
 }

@@ -27,6 +27,8 @@ Servo servoESC;
 #define FLYWHEEL_STATE_BRAKE            2
 #define FLYWHEEL_STATE_BRAKE_TIME       2000
 
+#define FIRE_REV_HOLD_DELAY             1000
+
 int flywheelState = FLYWHEEL_STATE_NEUTRAL;
 long flywheelStateTimer = 0;
 
@@ -34,8 +36,8 @@ long flywheelStateTimer = 0;
 #define PLUNGER_STATE_ON                1
 #define PLUNGER_STATE_DELAY             2
 
-#define PLUNGER_STATE_ON_TIME           50
-#define PLUNGER_STATE_OFF_TIME          100
+#define PLUNGER_STATE_ON_TIME           80
+#define PLUNGER_STATE_OFF_TIME          150
 
 int plungerState = PLUNGER_STATE_NEUTRAL;
 long plungerStateTimer = 0;
@@ -74,6 +76,7 @@ void setup() {
 //////// Loop ////////
 boolean sp = true;
 boolean triggerOld = false;
+long fireTimeLast = 0;
 
 void loop() {
   long currentTime = millis();
@@ -102,7 +105,7 @@ void loop() {
   int ESCPos;
   switch (flywheelState) {
     case FLYWHEEL_STATE_REV: {
-      if (!switchTriggerRevRead()) {
+      if (!switchTriggerRevRead() && (currentTime >(fireTimeLast + FIRE_REV_HOLD_DELAY))) {
         flywheelState = FLYWHEEL_STATE_BRAKE;
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_BRAKE_TIME;
         Serial.println("brake");
@@ -153,9 +156,17 @@ void loop() {
     }
     case PLUNGER_STATE_DELAY: {
       if (currentTime > plungerStateTimer) {
-        plungerState = PLUNGER_STATE_NEUTRAL;
-        Serial.println("p-neutral");
-        solenoidPos = LOW;
+        if (triggerCurrent) {
+          plungerState = PLUNGER_STATE_ON;
+          plungerStateTimer = currentTime + PLUNGER_STATE_ON_TIME;
+          fireTimeLast = currentTime;
+          Serial.println("p-auto");
+          solenoidPos = HIGH;
+        } else {        
+          plungerState = PLUNGER_STATE_NEUTRAL;
+          Serial.println("p-neutral");
+          solenoidPos = LOW;
+        }
       }
       break;
     }
@@ -164,6 +175,7 @@ void loop() {
       if (triggerEdge) {
         plungerState = PLUNGER_STATE_ON;
         plungerStateTimer = currentTime + PLUNGER_STATE_ON_TIME;
+        fireTimeLast = currentTime;
         Serial.println("p-on");
         solenoidPos = HIGH;
       } else {
