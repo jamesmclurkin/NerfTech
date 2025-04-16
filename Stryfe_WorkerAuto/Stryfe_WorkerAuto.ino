@@ -11,10 +11,11 @@ unsigned long heartbeatPrintTime = 0;
 
 Servo servoESC;
 
-#define PIN_FLYWHEEL_ESC            10
+#define PIN_FLYWHEEL_ESC            5
 #define PIN_TRIGGER_REV             9
 #define PIN_TRIGGER_FIRE            7
-#define PIN_PLUNGER_PWM             5
+#define PIN_PLUNGER_PWM             10
+#define PIN_PLUNGER_END_SW          3
 
 #define FLYWHEEL_MOTOR_ESC_NEUTRAL      90
 #define FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL 96
@@ -33,14 +34,20 @@ Servo servoESC;
 int flywheelState = FLYWHEEL_STATE_NEUTRAL;
 long flywheelStateTimer = 0;
 
-#define PLUNGER_STATE_STARTUP_DELAY     0
-#define PLUNGER_STATE_NEUTRAL           1
-#define PLUNGER_STATE_ON                2
-#define PLUNGER_STATE_DELAY             3
+
+// Plunger Globals
+
+#define PLUNGER_STATE_STARTUP_DELAY       0
+#define PLUNGER_STATE_NEUTRAL             1
+#define PLUNGER_STATE_ON                  2
+#define PLUNGER_STATE_DELAY               3
 
 #define PLUNGER_STATE_STARTUP_DELAY_TIME  4000
 #define PLUNGER_STATE_ON_TIME             50
 #define PLUNGER_STATE_OFF_TIME            100
+
+#define PLUNGER_PWM_BRAKE                 0
+#define PLUNGER_PWM_RUN                   (60*255/100)
 
 int plungerState = PLUNGER_STATE_NEUTRAL;
 long plungerStateTimer = 0;
@@ -48,8 +55,9 @@ long plungerStateTimer = 0;
 
 boolean switchTriggerRevRead() {return digitalRead(PIN_TRIGGER_REV); }
 boolean switchTriggerFireRead() {return !digitalRead(PIN_TRIGGER_FIRE); }
+boolean switchPlungerEndRead() {return !digitalRead(PIN_PLUNGER_END_SW); }
 void plungerPWMSet(int val) {
-  digitalWrite(PIN_PLUNGER_PWM, val);
+  analogWrite(PIN_PLUNGER_PWM, val);
 }
 
 
@@ -58,6 +66,7 @@ void setup() {
   // Setup the pins for internal sensing
   pinMode(PIN_TRIGGER_REV, INPUT_PULLUP);
   pinMode(PIN_TRIGGER_FIRE, INPUT_PULLUP);
+  pinMode(PIN_PLUNGER_END_SW, INPUT_PULLUP);
   pinMode(PIN_PLUNGER_PWM, OUTPUT);
   plungerPWMSet(0);
 
