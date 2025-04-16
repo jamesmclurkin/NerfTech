@@ -4,17 +4,18 @@
 #include <Servo.h>
 
 // global variables for main system status
-#define HEARTBEAT_UPDATE_PERIOD         50
+#define HEARTBEAT_UPDATE_PERIOD         10
 #define HEARTBEAT_PRINT_PERIOD          250
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
 
 Servo servoESC;
 
-#define PIN_FLYWHEEL_ESC            10
+#define PIN_FLYWHEEL_ESC            5
 #define PIN_TRIGGER_REV             9
 #define PIN_TRIGGER_FIRE            7
-#define PIN_SOLENOID                5
+#define PIN_PLUNGER_PWM             10
+#define PIN_PLUNGER_END_SW          3
 
 #define FLYWHEEL_MOTOR_ESC_NEUTRAL      90
 #define FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL 96
@@ -22,22 +23,31 @@ Servo servoESC;
 #define FLYWHEEL_MOTOR_ESC_RUN          150
 #define FLYWHEEL_MOTOR_ESC_BRAKE        20
 
-#define FLYWHEEL_STATE_NEUTRAL          0
-#define FLYWHEEL_STATE_REV              1
-#define FLYWHEEL_STATE_BRAKE            2
-#define FLYWHEEL_STATE_BRAKE_TIME       2000
+#define FLYWHEEL_STATE_STARTUP_DELAY    0
+#define FLYWHEEL_STATE_NEUTRAL          1
+#define FLYWHEEL_STATE_REV              2
+#define FLYWHEEL_STATE_BRAKE            3
 
-#define FIRE_REV_HOLD_DELAY             1000
+#define FLYWHEEL_STATE_STARTUP_DELAY_TIME 4000
+#define FLYWHEEL_STATE_BRAKE_TIME         2000
 
 int flywheelState = FLYWHEEL_STATE_NEUTRAL;
 long flywheelStateTimer = 0;
 
-#define PLUNGER_STATE_NEUTRAL           0
-#define PLUNGER_STATE_ON                1
-#define PLUNGER_STATE_DELAY             2
 
-#define PLUNGER_STATE_ON_TIME           80
-#define PLUNGER_STATE_OFF_TIME          150
+// Plunger Globals
+
+#define PLUNGER_STATE_STARTUP_DELAY       0
+#define PLUNGER_STATE_NEUTRAL             1
+#define PLUNGER_STATE_ON                  2
+#define PLUNGER_STATE_DELAY               3
+
+#define PLUNGER_STATE_STARTUP_DELAY_TIME  4000
+#define PLUNGER_STATE_ON_TIME             50
+#define PLUNGER_STATE_OFF_TIME            100
+
+#define PLUNGER_PWM_BRAKE                 0
+#define PLUNGER_PWM_RUN                   (60*255/100)
 
 int plungerState = PLUNGER_STATE_NEUTRAL;
 long plungerStateTimer = 0;
@@ -45,7 +55,10 @@ long plungerStateTimer = 0;
 
 boolean switchTriggerRevRead() {return digitalRead(PIN_TRIGGER_REV); }
 boolean switchTriggerFireRead() {return !digitalRead(PIN_TRIGGER_FIRE); }
-void plungerPWMSet(int val) {digitalWrite(PIN_SOLENOID, val); }
+boolean switchPlungerEndRead() {return !digitalRead(PIN_PLUNGER_END_SW); }
+void plungerPWMSet(int val) {
+  analogWrite(PIN_PLUNGER_PWM, val);
+}
 
 
 
@@ -53,8 +66,9 @@ void setup() {
   // Setup the pins for internal sensing
   pinMode(PIN_TRIGGER_REV, INPUT_PULLUP);
   pinMode(PIN_TRIGGER_FIRE, INPUT_PULLUP);
-  pinMode(PIN_SOLENOID, OUTPUT);
-  plungerPWMSet(LOW);
+  pinMode(PIN_PLUNGER_END_SW, INPUT_PULLUP);
+  pinMode(PIN_PLUNGER_PWM, OUTPUT);
+  plungerPWMSet(0);
 
   // init the servo
   servoESC.attach(PIN_FLYWHEEL_ESC); // attaches the servo on pin 9 to the servo object
@@ -76,7 +90,6 @@ void setup() {
 //////// Loop ////////
 boolean sp = true;
 boolean triggerOld = false;
-long fireTimeLast = 0;
 
 void loop() {
   long currentTime = millis();
@@ -105,7 +118,7 @@ void loop() {
   int ESCPos;
   switch (flywheelState) {
     case FLYWHEEL_STATE_REV: {
-      if (!switchTriggerRevRead() && (currentTime >(fireTimeLast + FIRE_REV_HOLD_DELAY))) {
+      if (!switchTriggerRevRead()) {
         flywheelState = FLYWHEEL_STATE_BRAKE;
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_BRAKE_TIME;
         Serial.println("brake");
@@ -156,17 +169,9 @@ void loop() {
     }
     case PLUNGER_STATE_DELAY: {
       if (currentTime > plungerStateTimer) {
-        if (triggerCurrent) {
-          plungerState = PLUNGER_STATE_ON;
-          plungerStateTimer = currentTime + PLUNGER_STATE_ON_TIME;
-          fireTimeLast = currentTime;
-          Serial.println("p-auto");
-          solenoidPos = HIGH;
-        } else {        
-          plungerState = PLUNGER_STATE_NEUTRAL;
-          Serial.println("p-neutral");
-          solenoidPos = LOW;
-        }
+        plungerState = PLUNGER_STATE_NEUTRAL;
+        Serial.println("p-neutral");
+        solenoidPos = LOW;
       }
       break;
     }
@@ -175,7 +180,6 @@ void loop() {
       if (triggerEdge) {
         plungerState = PLUNGER_STATE_ON;
         plungerStateTimer = currentTime + PLUNGER_STATE_ON_TIME;
-        fireTimeLast = currentTime;
         Serial.println("p-on");
         solenoidPos = HIGH;
       } else {
