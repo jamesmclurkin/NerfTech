@@ -41,7 +41,7 @@
             "cStandard": "c11",
             "cppStandard": "c++11",
             "defines": [
-                "__SKETCH_NAME__=Stryfe_Solenoid.ino",
+                "__SKETCH_NAME__=Stryfe_WorkerAuto.ino",
                 "F_CPU=120000000L",
                 "ARDUINO=10819",
                 "ARDUINO_ITSYBITSY_M4",

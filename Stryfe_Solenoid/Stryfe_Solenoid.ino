@@ -75,7 +75,7 @@ void setup() {
 
 //////// Loop ////////
 boolean sp = true;
-boolean triggerOld = false;
+boolean triggerFireOld = false;
 long fireTimeLast = 0;
 
 void loop() {
@@ -140,10 +140,10 @@ void loop() {
 
   int solenoidPos = LOW;
   boolean triggerCurrent = switchTriggerFireRead();
-  boolean triggerEdge = (triggerCurrent && !triggerOld);
+  boolean triggerEdge = (triggerCurrent && !triggerFireOld);
 
   switch (plungerState) {
-    case PLUNGER_STATE_ON: {
+    case PLUNGER_STATE_RUN: {
       if (currentTime > plungerStateTimer) {
         plungerState = PLUNGER_STATE_DELAY;
         plungerStateTimer = currentTime + PLUNGER_STATE_OFF_TIME;
@@ -157,7 +157,7 @@ void loop() {
     case PLUNGER_STATE_DELAY: {
       if (currentTime > plungerStateTimer) {
         if (triggerCurrent) {
-          plungerState = PLUNGER_STATE_ON;
+          plungerState = PLUNGER_STATE_RUN;
           plungerStateTimer = currentTime + PLUNGER_STATE_ON_TIME;
           fireTimeLast = currentTime;
           Serial.println("p-auto");
@@ -173,7 +173,7 @@ void loop() {
     default:
     case PLUNGER_STATE_NEUTRAL: {
       if (triggerEdge) {
-        plungerState = PLUNGER_STATE_ON;
+        plungerState = PLUNGER_STATE_RUN;
         plungerStateTimer = currentTime + PLUNGER_STATE_ON_TIME;
         fireTimeLast = currentTime;
         Serial.println("p-on");
@@ -185,7 +185,7 @@ void loop() {
     }
   }
   plungerPWMSet(solenoidPos);
-  triggerOld = triggerCurrent;
+  triggerFireOld = triggerCurrent;
 
   delay(2);
 }
