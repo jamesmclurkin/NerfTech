@@ -155,7 +155,8 @@ void loop() {
   boolean triggerRev = switchTriggerRevRead();
   boolean triggerRevEdge = (triggerRev && !triggerRevOld);
 
-  triggerRev = false;
+  // For testing plunger FSM
+  //triggerRev = false;
 
   switch (flywheelState) {
     case FLYWHEEL_STATE_STARTUP_DELAY: {
