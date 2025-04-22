@@ -218,7 +218,7 @@ void loop() {
   servoESC.write(ESCPos);
 
 
-  int plungerPWM = PLUNGER_PWM_BRAKE;
+  int plungerPWM = PLUNGER_PWM_OFF;
 
   boolean triggerFire = switchTriggerFireRead();
   boolean triggerFireEdge = (triggerFire && !triggerFireOld);
@@ -239,11 +239,11 @@ void loop() {
         plungerState = PLUNGER_STATE_NEUTRAL;
         Serial.println("p:startup->neutral");
       }
-      plungerPWM = PLUNGER_PWM_BRAKE;
+      plungerPWM = PLUNGER_PWM_OFF;
       break;
     }
     case PLUNGER_STATE_NEUTRAL: {
-      plungerPWM = PLUNGER_PWM_BRAKE;
+      plungerPWM = PLUNGER_PWM_OFF;
       if (triggerFire) {
         plungerStateTimer = currentTime + PLUNGER_PWM_RUN_TIME;
         plungerState = PLUNGER_STATE_RUN_AUTO;
@@ -311,7 +311,7 @@ void loop() {
       break;
     }
     default: {
-      plungerPWM = PLUNGER_PWM_BRAKE;
+      plungerPWM = PLUNGER_PWM_OFF;
       plungerState = PLUNGER_STATE_NEUTRAL;
       break;
     }
