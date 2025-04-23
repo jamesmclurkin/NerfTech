@@ -17,22 +17,23 @@ unsigned long heartbeatPrintTime = 0;
 #define PIN_PLUNGER_PWM             5
 
 #define FLYWHEEL_MOTOR_ESC_NEUTRAL          90
-#define FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL     96
-#define FLYWHEEL_MOTOR_ESC_REV              120
-#define FLYWHEEL_MOTOR_ESC_REV_HOLD         90
+#define FLYWHEEL_MOTOR_ESC_REV              160
+#define FLYWHEEL_MOTOR_ESC_REV_HOLD         110
 #define FLYWHEEL_MOTOR_ESC_BRAKE            20
 
 #define FLYWHEEL_STATE_STARTUP_DELAY        0
 #define FLYWHEEL_STATE_NEUTRAL              1
 #define FLYWHEEL_STATE_REV_BEFORE_AUTO      2
-#define FLYWHEEL_STATE_REV_FIRE             3
+#define FLYWHEEL_STATE_FIRE                 3
 #define FLYWHEEL_STATE_REV_HOLD             4
-#define FLYWHEEL_STATE_BRAKE                5
+#define FLYWHEEL_STATE_REREV                5
+#define FLYWHEEL_STATE_BRAKE                6
 
 #define FLYWHEEL_STATE_STARTUP_DELAY_TIME   4000
-#define FLYWHEEL_STATE_REV_UP_TIME          1000
-#define FLYWHEEL_STATE_REV_HOLD_TIME        1000
-#define FLYWHEEL_STATE_BRAKE_TIME           2000
+#define FLYWHEEL_STATE_REV_UP_TIME          600
+#define FLYWHEEL_STATE_REREV_TIME           200
+#define FLYWHEEL_STATE_REV_HOLD_TIME        3000
+#define FLYWHEEL_STATE_BRAKE_TIME           600
 
 Servo servoESC;
 int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
@@ -40,8 +41,7 @@ int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 
 #define PWM_PERCENT(val)                  (((val) * 255) / 100)
 #define PLUNGER_PWM_OFF                   0
-//#define PLUNGER_PWM_RUN_PERCENTAGE        40
-#define PLUNGER_PWM_RUN                   PWM_PERCENT(40) 
+#define PLUNGER_PWM_RUN                   PWM_PERCENT(60) 
 
 #define LOOP_TIME                         5
 
@@ -159,12 +159,12 @@ void loop() {
         Serial.println("rev->revhold");
       }
       if (currentTime > flywheelStateTimer) {
-        flywheelState = FLYWHEEL_STATE_REV_FIRE;
+        flywheelState = FLYWHEEL_STATE_FIRE;
         Serial.println("rev->fire");
       }
       break;
     }
-    case FLYWHEEL_STATE_REV_FIRE: {
+    case FLYWHEEL_STATE_FIRE: {
       ESCPos = FLYWHEEL_MOTOR_ESC_REV;
       plungerPWM = PLUNGER_PWM_RUN;
       if (!triggerFire) {
@@ -178,13 +178,28 @@ void loop() {
       ESCPos = FLYWHEEL_MOTOR_ESC_REV_HOLD;
       plungerPWM = PLUNGER_PWM_OFF;
       if (triggerFire) {
-        flywheelState = FLYWHEEL_STATE_REV_FIRE;
-        Serial.println("revhold->fire");
+        flywheelState = FLYWHEEL_STATE_REREV;
+        flywheelStateTimer = currentTime + FLYWHEEL_STATE_REREV_TIME;
+        Serial.println("revhold->rerev");
       }
       if (currentTime > flywheelStateTimer) {
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_BRAKE_TIME;
         flywheelState = FLYWHEEL_STATE_BRAKE;
         Serial.println("revhold->brake");
+      }
+      break;
+    }
+    case FLYWHEEL_STATE_REREV: {
+      ESCPos = FLYWHEEL_MOTOR_ESC_REV;
+      plungerPWM = PLUNGER_PWM_OFF;
+      if (!triggerFire) {
+        flywheelState = FLYWHEEL_STATE_REV_HOLD;
+        flywheelStateTimer = currentTime + FLYWHEEL_STATE_REV_HOLD_TIME;
+        Serial.println("rerev->revhold");
+      }
+      if (currentTime > flywheelStateTimer) {
+        flywheelState = FLYWHEEL_STATE_FIRE;
+        Serial.println("rerev->fire");
       }
       break;
     }
@@ -198,6 +213,7 @@ void loop() {
       if (currentTime > flywheelStateTimer) {
         flywheelState = FLYWHEEL_STATE_NEUTRAL;
         Serial.println("brake->neutral");
+        Serial.println("");
       }
       break;
     }
