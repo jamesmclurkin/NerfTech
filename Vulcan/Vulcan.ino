@@ -30,9 +30,9 @@ unsigned long heartbeatPrintTime = 0;
 #define FLYWHEEL_STATE_BRAKE                6
 
 #define FLYWHEEL_STATE_STARTUP_DELAY_TIME   4000
-#define FLYWHEEL_STATE_REV_UP_TIME          600
+#define FLYWHEEL_STATE_REV_UP_TIME          800
 #define FLYWHEEL_STATE_REREV_TIME           200
-#define FLYWHEEL_STATE_REV_HOLD_TIME        3000
+#define FLYWHEEL_STATE_REV_HOLD_TIME        1000
 #define FLYWHEEL_STATE_BRAKE_TIME           600
 
 Servo servoESC;
@@ -41,7 +41,7 @@ int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 
 #define PWM_PERCENT(val)                  (((val) * 255) / 100)
 #define PLUNGER_PWM_OFF                   0
-#define PLUNGER_PWM_RUN                   PWM_PERCENT(60) 
+#define PLUNGER_PWM_RUN                   PWM_PERCENT(30)
 
 #define LOOP_TIME                         5
 
