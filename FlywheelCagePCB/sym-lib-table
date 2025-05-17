@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Passives")(type "KiCad")(uri "${KIPRJMOD}/Passives.kicad_sym")(options "")(descr ""))
+)
