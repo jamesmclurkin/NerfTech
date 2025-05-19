@@ -337,7 +337,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Connector_Generic:Conn_01x05"
+		(symbol "Passives:Conn_JST_ZH_S5B_Horizontal_01x05"
 			(pin_names
 				(offset 1.016)
 				(hide yes)
@@ -346,22 +346,22 @@
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "J"
-				(at 0 7.62 0)
+				(at 0 -11.43 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
 				)
 			)
-			(property "Value" "Conn_01x05"
-				(at 0 -7.62 0)
+			(property "Value" "JST_ZH_S5B"
+				(at 0 -8.89 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "McLibrary:JST_ZH_B5B-ZR_1x05_P1.50mm_Horizontal"
 				(at 0 0 0)
 				(effects
 					(font
@@ -388,6 +388,15 @@
 					(hide yes)
 				)
 			)
+			(property "P/N" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
 			(property "ki_keywords" "connector"
 				(at 0 0 0)
 				(effects
@@ -406,7 +415,7 @@
 					(hide yes)
 				)
 			)
-			(symbol "Conn_01x05_1_1"
+			(symbol "Conn_JST_ZH_S5B_Horizontal_01x05_1_1"
 				(rectangle
 					(start -1.27 6.35)
 					(end 1.27 -6.35)
@@ -776,7 +785,7 @@
 					)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "LED_SMD:LED_0603_1608Metric"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1842,6 +1851,354 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Passives:SFH_320-4-Z"
+			(pin_names
+				(offset 1.016)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "D"
+				(at -10.16 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left bottom)
+				)
+			)
+			(property "Value" "SFH_320-4-Z"
+				(at -10.16 -7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left bottom)
+				)
+			)
+			(property "Footprint" "McLibrary:PHODET_SFH_320-4-Z"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "PARTREV" "1.7"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "STANDARD" "Manufacturer Recommendations"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "MAXIMUM_PACKAGE_HEIGHT" "2.1mm"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "MANUFACTURER" "OSRAM"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(symbol "SFH_320-4-Z_0_0"
+				(polyline
+					(pts
+						(xy -4.953 2.54) (xy -3.175 0.762)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.953 0.635) (xy -3.175 -1.143)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.318 1.143) (xy -3.556 1.905)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.318 1.143) (xy -3.175 0.762) (xy -3.556 1.905) (xy -4.318 1.143)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.318 -0.762) (xy -3.556 0)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.318 -0.762) (xy -3.175 -1.143) (xy -3.556 0) (xy -4.318 -0.762)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.556 1.905) (xy -3.175 0.762)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.556 0) (xy -3.175 -1.143)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.175 0.762) (xy -4.318 1.143)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.175 -1.143) (xy -4.318 -0.762)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 1.905) (xy 0 0.635)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 0.635) (xy 0 -0.635)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 0.635) (xy 2.54 2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -0.635) (xy 0 -1.905)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -0.635) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 1.27 0)
+					(radius 3.175)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.286 -2.286) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 -2.54) (xy 2.286 -1.524) (xy 1.524 -2.54) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(pin passive line
+					(at 2.54 5.08 270)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "C"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 2.54 -5.08 90)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "E"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Regulator_Linear:SPX3819M5-L-3-3"
 			(pin_names
 				(offset 0.254)
@@ -2008,226 +2365,6 @@
 						)
 					)
 					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
-		(symbol "Sensor_Optical:SFH320"
-			(pin_names
-				(offset 0)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "Q"
-				(at 5.08 1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "SFH320"
-				(at 5.08 -1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" "LED_SMD:LED_PLCC-2_3.4x3.0mm_KA"
-				(at 12.192 -3.556 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "https://look.ams-osram.com/m/5397c5d8583a26cf/original/SFH-320.pdf"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Silicon NPN Phototransistor, PLCC-2"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "npn phototransistor"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "LED?SMD:LED?PLCC?2?3.4x3.0mm?KA*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "SFH320_0_1"
-				(polyline
-					(pts
-						(xy -3.81 3.175) (xy -1.905 1.27) (xy -1.905 1.905)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -3.175 4.445) (xy -1.27 2.54) (xy -1.27 3.175)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.905 1.27) (xy -2.54 1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 2.54) (xy -1.905 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.635 1.905) (xy 0.635 -1.905) (xy 0.635 -1.905)
-					)
-					(stroke
-						(width 0.508)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.635 0.635) (xy 2.54 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.635 -0.635) (xy 2.54 -2.54) (xy 2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 1.27 0)
-					(radius 2.8194)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 -1.778) (xy 1.778 -1.27) (xy 2.286 -2.286) (xy 1.27 -1.778) (xy 1.27 -1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-			)
-			(symbol "SFH320_1_1"
-				(pin passive line
-					(at 2.54 5.08 270)
-					(length 2.54)
-					(name "C"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 -5.08 90)
-					(length 2.54)
-					(name "E"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3277,7 +3414,7 @@
 	)
 	(wire
 		(pts
-			(xy 165.1 120.65) (xy 165.1 123.19)
+			(xy 165.1 127) (xy 165.1 129.54)
 		)
 		(stroke
 			(width 0)
@@ -3357,16 +3494,6 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 95.25) (xy 175.26 113.03)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4b4ad61a-aa21-4553-95e5-0161b523ae34")
-	)
-	(wire
-		(pts
 			(xy 194.31 44.45) (xy 196.85 44.45)
 		)
 		(stroke
@@ -3377,7 +3504,7 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 120.65) (xy 95.25 128.27)
+			(xy 86.36 120.65) (xy 86.36 128.27)
 		)
 		(stroke
 			(width 0)
@@ -3467,7 +3594,7 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 120.65) (xy 175.26 123.19)
+			(xy 175.26 127) (xy 175.26 129.54)
 		)
 		(stroke
 			(width 0)
@@ -3487,7 +3614,7 @@
 	)
 	(wire
 		(pts
-			(xy 165.1 100.33) (xy 165.1 113.03)
+			(xy 165.1 100.33) (xy 165.1 119.38)
 		)
 		(stroke
 			(width 0)
@@ -3537,7 +3664,7 @@
 	)
 	(wire
 		(pts
-			(xy 97.79 133.35) (xy 95.25 133.35)
+			(xy 97.79 133.35) (xy 86.36 133.35)
 		)
 		(stroke
 			(width 0)
@@ -3557,13 +3684,23 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 111.76) (xy 95.25 113.03)
+			(xy 86.36 111.76) (xy 86.36 113.03)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "a82769e2-98df-4367-96f1-ed8ce12d1c29")
+	)
+	(wire
+		(pts
+			(xy 175.26 95.25) (xy 175.26 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a8635896-18f9-4672-b250-7874208b5660")
 	)
 	(wire
 		(pts
@@ -3587,7 +3724,7 @@
 	)
 	(wire
 		(pts
-			(xy 165.1 130.81) (xy 165.1 133.35)
+			(xy 165.1 137.16) (xy 165.1 139.7)
 		)
 		(stroke
 			(width 0)
@@ -3607,7 +3744,7 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 130.81) (xy 175.26 133.35)
+			(xy 175.26 137.16) (xy 175.26 139.7)
 		)
 		(stroke
 			(width 0)
@@ -3737,7 +3874,7 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 133.35) (xy 95.25 137.16)
+			(xy 86.36 133.35) (xy 86.36 137.16)
 		)
 		(stroke
 			(width 0)
@@ -3777,7 +3914,7 @@
 	)
 	(wire
 		(pts
-			(xy 97.79 128.27) (xy 95.25 128.27)
+			(xy 97.79 128.27) (xy 86.36 128.27)
 		)
 		(stroke
 			(width 0)
@@ -3855,6 +3992,16 @@
 		)
 		(uuid "fdf6df4f-f682-4cc2-8dcb-c840c4c5e119")
 	)
+	(label "breakbeam_led_ind"
+		(at 175.26 128.27 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0169ec63-d15e-410f-99bc-ac67de8720c5")
+	)
 	(label "breakbeam_d"
 		(at 218.44 95.25 0)
 		(effects
@@ -3864,6 +4011,16 @@
 			(justify left bottom)
 		)
 		(uuid "2437297c-798a-481c-a398-95e8a1685aef")
+	)
+	(label "tach_led_ind"
+		(at 165.1 128.27 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "2bb0dd41-3b07-4519-9f3c-349aa6204803")
 	)
 	(label "tach_d"
 		(at 218.44 97.79 0)
@@ -3884,6 +4041,36 @@
 			(justify left bottom)
 		)
 		(uuid "9bf06f96-4dbe-4c65-95ee-343d47d7a59a")
+	)
+	(label "tach_led"
+		(at 88.9 128.27 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a1cc17a1-8d37-474b-9c94-559eb8a8d4cd")
+	)
+	(label "power_led_ind"
+		(at 209.55 52.07 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ba269fee-8da0-4f8e-9053-1a47704a57a3")
+	)
+	(label "breakbeam_led"
+		(at 68.58 71.12 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c8d6223c-be6c-40db-a2b1-2bfc24b55aa3")
 	)
 	(label "breakbeam_a"
 		(at 119.38 66.04 0)
@@ -4139,7 +4326,7 @@
 	)
 	(symbol
 		(lib_id "Passives:LED_RED_0603")
-		(at 175.26 127 90)
+		(at 175.26 133.35 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4148,7 +4335,7 @@
 		(fields_autoplaced yes)
 		(uuid "08098860-0f6f-4a70-99c4-bc69aa36a069")
 		(property "Reference" "D2"
-			(at 179.07 127.3174 90)
+			(at 179.07 133.6674 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4157,7 +4344,7 @@
 			)
 		)
 		(property "Value" "Red"
-			(at 179.07 129.8574 90)
+			(at 179.07 136.2074 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4165,8 +4352,8 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
-			(at 175.26 127 0)
+		(property "Footprint" "LED_SMD:LED_0603_1608Metric"
+			(at 175.26 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4175,7 +4362,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 175.26 127 0)
+			(at 175.26 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4184,7 +4371,7 @@
 			)
 		)
 		(property "Description" "Light emitting diode Red, 0603 footprint"
-			(at 175.26 127 0)
+			(at 175.26 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4193,7 +4380,7 @@
 			)
 		)
 		(property "Sim.Pins" "1=K 2=A"
-			(at 175.26 127 0)
+			(at 175.26 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4343,6 +4530,117 @@
 			(project "FlywheelCagePCB"
 				(path "/9fc34ef8-745f-487b-b5b4-2fc3ca9e558b"
 					(reference "#PWR09")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Passives:SFH_320-4-Z")
+		(at 111.76 72.39 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "1c52c5e6-29f6-4713-82a1-99ce2853051b")
+		(property "Reference" "D4"
+			(at 118.11 71.1199 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "SFH_320-4-Z"
+			(at 118.11 73.6599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "McLibrary:PHODET_SFH_320-4-Z"
+			(at 111.76 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 111.76 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 111.76 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PARTREV" "1.7"
+			(at 111.76 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "STANDARD" "Manufacturer Recommendations"
+			(at 111.76 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "MAXIMUM_PACKAGE_HEIGHT" "2.1mm"
+			(at 111.76 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER" "OSRAM"
+			(at 111.76 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(pin "C"
+			(uuid "f6c04137-8fa3-488a-a2b5-adb4da3c7712")
+		)
+		(pin "E"
+			(uuid "f1e6fd7e-0add-49a9-8321-7de576ea5191")
+		)
+		(instances
+			(project ""
+				(path "/9fc34ef8-745f-487b-b5b4-2fc3ca9e558b"
+					(reference "D4")
 					(unit 1)
 				)
 			)
@@ -4840,7 +5138,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x05")
+		(lib_id "Passives:Conn_JST_ZH_S5B_Horizontal_01x05")
 		(at 44.45 68.58 180)
 		(unit 1)
 		(exclude_from_sim no)
@@ -4865,7 +5163,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_ZH_S5B-ZR-SM4A-TF_1x05-1MP_P1.50mm_Horizontal"
+		(property "Footprint" "McLibrary:JST_ZH_B5B-ZR_1x05_P1.50mm_Horizontal"
 			(at 44.45 68.58 0)
 			(effects
 				(font
@@ -5150,7 +5448,7 @@
 	)
 	(symbol
 		(lib_id "Passives:R_330_0603")
-		(at 175.26 116.84 0)
+		(at 175.26 123.19 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5159,7 +5457,7 @@
 		(fields_autoplaced yes)
 		(uuid "72c69ade-7918-42d1-80ee-9467f9340430")
 		(property "Reference" "R6"
-			(at 177.8 115.5699 0)
+			(at 177.8 121.9199 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5168,7 +5466,7 @@
 			)
 		)
 		(property "Value" "330"
-			(at 177.8 118.1099 0)
+			(at 177.8 124.4599 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5177,7 +5475,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 176.276 117.094 90)
+			(at 176.276 123.444 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5186,7 +5484,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 175.26 116.84 0)
+			(at 175.26 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5195,7 +5493,7 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
-			(at 175.26 116.84 0)
+			(at 175.26 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5204,7 +5502,7 @@
 			)
 		)
 		(property "PartNumber" "311-330HRCT-ND"
-			(at 175.26 116.84 0)
+			(at 175.26 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5229,7 +5527,7 @@
 	)
 	(symbol
 		(lib_id "Passives:LED_RED_0603")
-		(at 165.1 127 90)
+		(at 165.1 133.35 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5238,7 +5536,7 @@
 		(fields_autoplaced yes)
 		(uuid "75b4ba72-6734-4f75-8a8f-d538d4a473f0")
 		(property "Reference" "D1"
-			(at 168.91 127.3174 90)
+			(at 168.91 133.6674 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5247,7 +5545,7 @@
 			)
 		)
 		(property "Value" "Red"
-			(at 168.91 129.8574 90)
+			(at 168.91 136.2074 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5255,8 +5553,8 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
-			(at 165.1 127 0)
+		(property "Footprint" "LED_SMD:LED_0603_1608Metric"
+			(at 165.1 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5265,7 +5563,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 165.1 127 0)
+			(at 165.1 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5274,7 +5572,7 @@
 			)
 		)
 		(property "Description" "Light emitting diode Red, 0603 footprint"
-			(at 165.1 127 0)
+			(at 165.1 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5283,7 +5581,7 @@
 			)
 		)
 		(property "Sim.Pins" "1=K 2=A"
-			(at 165.1 127 0)
+			(at 165.1 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5651,7 +5949,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 95.25 137.16 0)
+		(at 86.36 137.16 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5660,7 +5958,7 @@
 		(fields_autoplaced yes)
 		(uuid "9779250c-53ab-4f99-84fc-5dffa5216e88")
 		(property "Reference" "#PWR07"
-			(at 95.25 143.51 0)
+			(at 86.36 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5669,7 +5967,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 95.25 142.24 0)
+			(at 86.36 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5677,7 +5975,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 95.25 137.16 0)
+			(at 86.36 137.16 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5686,7 +5984,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 95.25 137.16 0)
+			(at 86.36 137.16 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5695,7 +5993,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 95.25 137.16 0)
+			(at 86.36 137.16 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5716,7 +6014,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x05")
+		(lib_id "Passives:Conn_JST_ZH_S5B_Horizontal_01x05")
 		(at 240.03 97.79 0)
 		(mirror x)
 		(unit 1)
@@ -5743,7 +6041,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_ZH_S5B-ZR-SM4A-TF_1x05-1MP_P1.50mm_Horizontal"
+		(property "Footprint" "McLibrary:JST_ZH_B5B-ZR_1x05_P1.50mm_Horizontal"
 			(at 240.03 97.79 0)
 			(effects
 				(font
@@ -5864,85 +6162,6 @@
 			(project "FlywheelCagePCB"
 				(path "/9fc34ef8-745f-487b-b5b4-2fc3ca9e558b"
 					(reference "#PWR019")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Sensor_Optical:SFH320")
-		(at 111.76 72.39 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "a7419bce-1160-4ffb-8f34-3609fe242c84")
-		(property "Reference" "Q1"
-			(at 116.84 70.3706 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "SFH320"
-			(at 116.84 72.9106 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "LED_SMD:LED_PLCC-2_3.4x3.0mm_KA"
-			(at 123.952 75.946 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://look.ams-osram.com/m/5397c5d8583a26cf/original/SFH-320.pdf"
-			(at 111.76 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Silicon NPN Phototransistor, PLCC-2"
-			(at 111.76 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "P/N" ""
-			(at 111.76 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "dc4d3754-6211-4486-aadc-7f6d8db04490")
-		)
-		(pin "2"
-			(uuid "92685421-d137-47db-baab-1478971e7c5f")
-		)
-		(instances
-			(project ""
-				(path "/9fc34ef8-745f-487b-b5b4-2fc3ca9e558b"
-					(reference "Q1")
 					(unit 1)
 				)
 			)
@@ -6095,7 +6314,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 165.1 133.35 0)
+		(at 165.1 139.7 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6104,7 +6323,7 @@
 		(fields_autoplaced yes)
 		(uuid "bb62371c-0073-47ad-ac1a-16167d53edc6")
 		(property "Reference" "#PWR020"
-			(at 165.1 139.7 0)
+			(at 165.1 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6113,7 +6332,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 165.1 138.43 0)
+			(at 165.1 144.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6121,7 +6340,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 165.1 133.35 0)
+			(at 165.1 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6130,7 +6349,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 165.1 133.35 0)
+			(at 165.1 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6139,7 +6358,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 165.1 133.35 0)
+			(at 165.1 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6161,7 +6380,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 175.26 133.35 0)
+		(at 175.26 139.7 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6170,7 +6389,7 @@
 		(fields_autoplaced yes)
 		(uuid "be9836d3-d65e-4e0b-9398-7da7c3343c5b")
 		(property "Reference" "#PWR021"
-			(at 175.26 139.7 0)
+			(at 175.26 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6179,7 +6398,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 175.26 138.43 0)
+			(at 175.26 144.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6187,7 +6406,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 175.26 133.35 0)
+			(at 175.26 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6196,7 +6415,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 175.26 133.35 0)
+			(at 175.26 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6205,7 +6424,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 175.26 133.35 0)
+			(at 175.26 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6471,7 +6690,7 @@
 	)
 	(symbol
 		(lib_id "Passives:R_470_0603")
-		(at 95.25 116.84 0)
+		(at 86.36 116.84 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6480,7 +6699,7 @@
 		(fields_autoplaced yes)
 		(uuid "d253700a-f87f-4c9f-a014-1c706cb495f3")
 		(property "Reference" "R3"
-			(at 97.79 115.5699 0)
+			(at 88.9 115.5699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6489,7 +6708,7 @@
 			)
 		)
 		(property "Value" "470"
-			(at 97.79 118.1099 0)
+			(at 88.9 118.1099 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6498,7 +6717,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 96.266 117.094 90)
+			(at 87.376 117.094 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6507,7 +6726,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 95.25 116.84 0)
+			(at 86.36 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6516,7 +6735,7 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
-			(at 95.25 116.84 0)
+			(at 86.36 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6525,7 +6744,7 @@
 			)
 		)
 		(property "PartNumber" "311-470HRCT-ND"
-			(at 95.25 116.84 0)
+			(at 86.36 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6550,7 +6769,7 @@
 	)
 	(symbol
 		(lib_id "power:+5V")
-		(at 95.25 111.76 0)
+		(at 86.36 111.76 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6559,7 +6778,7 @@
 		(fields_autoplaced yes)
 		(uuid "debef93f-a788-42cd-b677-93e298971a10")
 		(property "Reference" "#PWR05"
-			(at 95.25 115.57 0)
+			(at 86.36 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6568,7 +6787,7 @@
 			)
 		)
 		(property "Value" "+5V"
-			(at 95.25 106.68 0)
+			(at 86.36 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6576,7 +6795,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 95.25 111.76 0)
+			(at 86.36 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6585,7 +6804,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 95.25 111.76 0)
+			(at 86.36 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6594,7 +6813,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 95.25 111.76 0)
+			(at 86.36 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6616,7 +6835,7 @@
 	)
 	(symbol
 		(lib_id "Passives:R_330_0603")
-		(at 165.1 116.84 0)
+		(at 165.1 123.19 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6625,7 +6844,7 @@
 		(fields_autoplaced yes)
 		(uuid "ee88aa96-5444-4c24-8041-d3097cf20c86")
 		(property "Reference" "R5"
-			(at 167.64 115.5699 0)
+			(at 167.64 121.9199 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6634,7 +6853,7 @@
 			)
 		)
 		(property "Value" "330"
-			(at 167.64 118.1099 0)
+			(at 167.64 124.4599 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6643,7 +6862,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 166.116 117.094 90)
+			(at 166.116 123.444 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6652,7 +6871,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 165.1 116.84 0)
+			(at 165.1 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6661,7 +6880,7 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
-			(at 165.1 116.84 0)
+			(at 165.1 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6670,7 +6889,7 @@
 			)
 		)
 		(property "PartNumber" "311-330HRCT-ND"
-			(at 165.1 116.84 0)
+			(at 165.1 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
