@@ -43,12 +43,12 @@
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
-        "silk_text_size_h": 1.0,
-        "silk_text_size_v": 1.0,
+        "silk_text_size_h": 0.8,
+        "silk_text_size_v": 0.8,
         "silk_text_thickness": 0.1,
         "silk_text_upright": false,
         "zones": {
-          "min_clearance": 0.5
+          "min_clearance": 0.2032
         }
       },
       "diff_pair_dimensions": [
@@ -386,7 +386,12 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [],
+    "erc_exclusions": [
+      [
+        "pin_to_pin|1130300|1333500|2b96d812-60d5-42cb-a166-58ca48053317|d8200cd2-5653-4243-a1ca-bc18a1f1e21d|/9fc34ef8-745f-487b-b5b4-2fc3ca9e558b|/9fc34ef8-745f-487b-b5b4-2fc3ca9e558b|/9fc34ef8-745f-487b-b5b4-2fc3ca9e558b",
+        ""
+      ]
+    ],
     "meta": {
       "version": 0
     },
@@ -637,7 +642,10 @@
     "meta": {
       "version": 4
     },
-    "net_colors": null,
+    "net_colors": {
+      "+3.3V": "rgb(255, 153, 0)",
+      "+5V": "rgb(255, 0, 0)"
+    },
     "netclass_assignments": null,
     "netclass_patterns": []
   },
