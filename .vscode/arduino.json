@@ -1,6 +1,6 @@
 {
-    "configuration": "opt=small,usbstack=arduino,debug=off",
-    "board": "adafruit:samd:adafruit_itsybitsy_m0",
-    "sketch": "NerfTech_RFID/NerfTech_RFID.ino",
+    "configuration": "cache=on,speed=120,opt=small,maxqspi=50,usbstack=arduino,debug=off",
+    "board": "adafruit:samd:adafruit_itsybitsy_m4",
+    "sketch": "Stryfe_WorkerAuto/Stryfe_WorkerAuto.ino",
     "port": "/dev/ttyACM0"
 }

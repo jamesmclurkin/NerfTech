@@ -58,11 +58,12 @@ int plungerState = PLUNGER_STATE_NEUTRAL;
 #define PLUNGER_STATE_OFF_TIME            100
 
 #define PLUNGER_PWM_BRAKE                 0
+#define PLUNGER_PWM_OFF                   PLUNGER_PWM_BRAKE
 #define PLUNGER_PWM_RUN_TIME              100
 #define PLUNGER_PWM_RUN_TIME_AUTO         100
 
 #define PWM_PERCENT(val)                  (((val) * 255) / 100)
-#define PLUNGER_PWM_RUN_PERCENTAGE        100
+#define PLUNGER_PWM_RUN_PERCENTAGE        90
 #define PLUNGER_PWM_RUN                   PWM_PERCENT(PLUNGER_PWM_RUN_PERCENTAGE)
 #define PLUNGER_PWM_RUN_SLOW_PERCENTAGE   40
 #define PLUNGER_PWM_RUN_SLOW              PWM_PERCENT(PLUNGER_PWM_RUN_SLOW_PERCENTAGE)
