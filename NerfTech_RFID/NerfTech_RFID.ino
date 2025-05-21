@@ -141,6 +141,7 @@ void loop(void) {
           }
         }
 
+        // Read, parse, and output the NerfTEch data
         if (success) {
           uint8_t i = 0;
           uint8_t stringNum = 0;

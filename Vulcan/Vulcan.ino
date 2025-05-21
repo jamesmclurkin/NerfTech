@@ -41,7 +41,7 @@ int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 
 #define PWM_PERCENT(val)                  (((val) * 255) / 100)
 #define PLUNGER_PWM_OFF                   0
-#define PLUNGER_PWM_RUN                   PWM_PERCENT(30)
+#define PLUNGER_PWM_RUN                   PWM_PERCENT(50)
 
 #define LOOP_TIME                         5
 
