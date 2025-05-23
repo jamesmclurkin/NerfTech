@@ -1,6 +1,0 @@
-{
-    "configuration": "cache=on,speed=120,opt=small,maxqspi=50,usbstack=arduino,debug=off",
-    "board": "adafruit:samd:adafruit_itsybitsy_m4",
-    "sketch": "Vulcan/Vulcan.ino",
-    "port": "/dev/ttyACM0"
-}
