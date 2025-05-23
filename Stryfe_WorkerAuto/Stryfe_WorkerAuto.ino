@@ -4,33 +4,33 @@
 #include <Servo.h>
 
 // global variables for main system status
-#define HEARTBEAT_UPDATE_PERIOD         10
+#define HEARTBEAT_UPDATE_PERIOD           10
 //#define HEARTBEAT_PRINT_PERIOD          250
-#define HEARTBEAT_PRINT_PERIOD          50
+#define HEARTBEAT_PRINT_PERIOD            50
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
 
 // flywheel globals
-#define PIN_FLYWHEEL_ESC            5
-#define PIN_TRIGGER_REV             9
-#define PIN_TRIGGER_FIRE            7
-#define PIN_PLUNGER_PWM             10
-#define PIN_PLUNGER_END_SW          3
+#define PIN_FLYWHEEL_ESC                  5
+#define PIN_TRIGGER_REV                   9
+#define PIN_TRIGGER_FIRE                  7
+#define PIN_PLUNGER_PWM                   10
+#define PIN_PLUNGER_END_SW                3
 
-#define FLYWHEEL_MOTOR_ESC_NEUTRAL      90
-#define FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL 96
-#define FLYWHEEL_MOTOR_ESC_REV          160
-#define FLYWHEEL_MOTOR_ESC_REV_HOLD     110
-#define FLYWHEEL_MOTOR_ESC_BRAKE        20
+#define FLYWHEEL_MOTOR_ESC_NEUTRAL        90
+#define FLYWHEEL_MOTOR_ESC_PRE_RUN_FULL   96
+#define FLYWHEEL_MOTOR_ESC_REV            160
+#define FLYWHEEL_MOTOR_ESC_REV_HOLD       110
+#define FLYWHEEL_MOTOR_ESC_BRAKE          20
 
-#define FLYWHEEL_STATE_STARTUP_DELAY    0
-#define FLYWHEEL_STATE_NEUTRAL          1
-#define FLYWHEEL_STATE_REV              2
-#define FLYWHEEL_STATE_REV_HOLD         3
-#define FLYWHEEL_STATE_BRAKE            4
+#define FLYWHEEL_STATE_STARTUP_DELAY      0
+#define FLYWHEEL_STATE_NEUTRAL            1
+#define FLYWHEEL_STATE_REV                2
+#define FLYWHEEL_STATE_REV_HOLD           3
+#define FLYWHEEL_STATE_BRAKE              4
 
 #define FLYWHEEL_STATE_STARTUP_DELAY_TIME 3000
-#define FLYWHEEL_STATE_REV_HOLD_TIME      1000
+#define FLYWHEEL_STATE_REV_HOLD_TIME      2000
 #define FLYWHEEL_STATE_BRAKE_TIME         2000
 
 Servo servoESC;
@@ -41,7 +41,7 @@ int flywheelState = FLYWHEEL_STATE_NEUTRAL;
 // plunger globals
 #define PLUNGER_STATE_STARTUP_DELAY       0
 #define PLUNGER_STATE_NEUTRAL             1
-#define PLUNGER_STATE_RUN_AUTO                 2
+#define PLUNGER_STATE_RUN_AUTO            2
 #define PLUNGER_STATE_BEGIN_STOP          3
 #define PLUNGER_STATE_RUN_TIMED           4
 #define PLUNGER_STATE_RUN_SLOW            5
@@ -63,7 +63,7 @@ int plungerState = PLUNGER_STATE_NEUTRAL;
 #define PLUNGER_PWM_RUN_TIME_AUTO         100
 
 #define PWM_PERCENT(val)                  (((val) * 255) / 100)
-#define PLUNGER_PWM_RUN_PERCENTAGE        90
+#define PLUNGER_PWM_RUN_PERCENTAGE        100
 #define PLUNGER_PWM_RUN                   PWM_PERCENT(PLUNGER_PWM_RUN_PERCENTAGE)
 #define PLUNGER_PWM_RUN_SLOW_PERCENTAGE   40
 #define PLUNGER_PWM_RUN_SLOW              PWM_PERCENT(PLUNGER_PWM_RUN_SLOW_PERCENTAGE)
@@ -77,7 +77,8 @@ int plungerState = PLUNGER_STATE_NEUTRAL;
 #define PLUNGER_VEL_MAX                   255
 #define PLUNGER_VEL_STEP_UP               ((int)((6 * LOOP_TIME) / 5))
 #define PLUNGER_VEL_STEP_DOWN             ((int)((3 * LOOP_TIME) / 5))
-#define PLUNGER_VEL_STOP_THRESHOLD        PWM_PERCENT(60)
+//#define PLUNGER_VEL_STOP_THRESHOLD        PWM_PERCENT(60)
+#define PLUNGER_VEL_STOP_THRESHOLD        PWM_PERCENT(150)
 #define PLUNGER_VEL_ITERM                 ((int)((3 * LOOP_TIME) / 5))
 int plungerVel = 0;
 
@@ -246,6 +247,7 @@ void loop() {
     }
     case PLUNGER_STATE_NEUTRAL: {
       plungerPWM = PLUNGER_PWM_OFF;
+      stopSlowITermPWM = 0;
       if (triggerFire) {
         plungerStateTimer = currentTime + PLUNGER_PWM_RUN_TIME;
         plungerState = PLUNGER_STATE_RUN_AUTO;
