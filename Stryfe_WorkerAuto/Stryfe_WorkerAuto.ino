@@ -84,8 +84,9 @@ int plungerVel = 0;
 boolean switchTriggerRevRead() {return digitalRead(PIN_TRIGGER_REV); }
 boolean switchTriggerFireRead() {return !digitalRead(PIN_TRIGGER_FIRE); }
 boolean switchPlungerEndRead() {return !digitalRead(PIN_PLUNGER_END_SW); }
+
 void plungerPWMSet(int val) {
-  analogWrite(PIN_PLUNGER_PWM, val);
+  analogWrite(PIN_PLUNGER_PWM, (255 - val));
 }
 
 

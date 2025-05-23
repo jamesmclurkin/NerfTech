@@ -26,10 +26,10 @@
 #include <Adafruit_PN532.h>
 
 // If using the breakout with SPI, define the pins for SPI communication.
-#define PN532_SCK  (2)
-#define PN532_MOSI (3)
-#define PN532_SS   (4)
-#define PN532_MISO (5)
+// #define PN532_SCK  (2)
+// #define PN532_MOSI (3)
+// #define PN532_SS   (4)
+// #define PN532_MISO (5)
 
 // If using the breakout or shield with I2C, define just the pins connected
 // to the IRQ and reset lines.  Use the values below (2, 3) for the shield!
@@ -51,8 +51,12 @@
 // Or use this line for a breakout or shield with an I2C connection:
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 
+#define PIN_BUTTON       2
+boolean buttonRead() {return !digitalRead(PIN_BUTTON); }
 
 void setup(void) {
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
+
   Serial.begin(115200);
   while (!Serial) delay(10); // for Leonardo/Micro/Zero
 
@@ -99,18 +103,29 @@ void uidClear(uint8_t* uid) {
   memset(uid, 0, UID_LENGTH);
 }
 
+boolean buttonOld = false;
+
 void loop(void) {
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
   char textData[NEFTTECH_STRING_COUNT][NEFTTECH_STRING_LEN];   // string data buffer
 
+  boolean button = buttonRead();
+  if(button & !buttonOld) {
+    //Serial.println("button!");
+    buttonOld = button;
+  } else {
+    delay(10);
+    buttonOld = button;
+    return;
+  }
   // Wait for an NTAG203 card.  When one is found 'uid' will be populated with
   // the UID, and uidLength will indicate the size of the UUID (normally 7)
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 50);
 
   if (!success) {     
-    //Serial.println("nothing");
+    Serial.println("no tag");
     uidClear(uidPrev);
   } else {
     if (uidLength == 7) {
@@ -198,5 +213,5 @@ void loop(void) {
     // Serial.flush();
   }
   //Serial.println("waiting...");
-  delay(250);
+  //delay(250);
 }
