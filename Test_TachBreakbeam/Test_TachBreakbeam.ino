@@ -12,6 +12,7 @@ void tachometerISR(void);
 
 unsigned long heartbeatTime;
 unsigned long tachReadTime;
+unsigned long tachInterruptTime;
 
 void setup() {
   // initialize the button pin as a input:
@@ -30,16 +31,18 @@ void setup() {
 }
 
 boolean tachRead = false;
-int tachCountRead = 0;
 int tachCount = 0;
+int tachCountPeriod = 0;
+long rpm = 0;
 
 // rising edge on the tach pin.  two edges per rotation
 void tachometerISR(void) {
   if(tachRead) {
-    tachCountRead = tachCount;
+    tachCountPeriod = tachCount;
     tachCount = 0;
     tachRead = false;
   }
+  tachInterruptTime = millis();
   tachCount++;
 }
 
@@ -51,15 +54,22 @@ long tachRPM (long counts) {
 void loop() {
   unsigned long timeCurrent = millis();
   if (timeCurrent > tachReadTime) {
-    tachRead = true;
+    if (timeCurrent > (tachInterruptTime + TACH_READ_PERIOD)) {
+      // It's been a long time since a tach interupt.  Clear the count
+      tachCount = 0;
+      tachCountPeriod = 0;
+    } else {
+      tachRead = true;
+    }
+    rpm = tachRPM(tachCountPeriod);
     tachReadTime += TACH_READ_PERIOD;
   }
 
   if (timeCurrent > heartbeatTime) {
     Serial.print("tach counts:");
-    Serial.print(tachCountRead, DEC);
+    Serial.print(tachCountPeriod, DEC);
     Serial.print(" RPM:");
-    Serial.print(tachRPM(tachCountRead), DEC);
+    Serial.print(rpm, DEC);
     Serial.println("");
     heartbeatTime += HEART_BEAT_PERIOD;
   }
