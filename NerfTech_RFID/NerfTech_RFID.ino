@@ -51,7 +51,7 @@
 // Or use this line for a breakout or shield with an I2C connection:
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 
-#define PIN_BUTTON       2
+#define PIN_BUTTON       12
 boolean buttonRead() {return !digitalRead(PIN_BUTTON); }
 
 void setup(void) {
@@ -74,7 +74,9 @@ void setup(void) {
   Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC);
   Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
 
-  Serial.println("Waiting for an ISO14443A Card ...");
+  //Serial.println("Waiting for an ISO14443A Card ...");
+  Serial.print("Press button on D");
+  Serial.println(PIN_BUTTON, DEC);
 }
 
 #define UID_LENGTH                  7 
