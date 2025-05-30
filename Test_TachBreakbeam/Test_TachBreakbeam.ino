@@ -1,12 +1,15 @@
+#include <Adafruit_DotStar.h>
+
+
 #define PIN_TACHOMETER            4
 #define PIN_BREAKBEAM             1
 //#define PIN_LED                   13
 #define PIN_MOTOR_TEMP            (A2)
-// setup neopizel here
+#define PIN_SPI_GPIO_TEST         24
 
 
 // heartbeat
-#define HEART_BEAT_PERIOD         1000
+#define HEART_BEAT_PERIOD         250
 
 unsigned long heartbeatTime;
 
@@ -108,6 +111,17 @@ float dartMicrosToFPS (int timeUS) {
   return speedFPS;
 }
 
+
+// GPIO Test
+boolean buttonRead() {return !digitalRead(PIN_SPI_GPIO_TEST); }
+
+// Dot Star
+// Everything is defined in the Board Support Package
+// DOTSTAR_NUM        number of onboard DotStars (typically just 1)
+// PIN_DOTSTAR_DATA   onboard DotStar data pin
+// PIN_DOTSTAR_CLK    onboard DotStar clock pin
+Adafruit_DotStar dotStar(DOTSTAR_NUM, PIN_DOTSTAR_DATA, PIN_DOTSTAR_CLK, DOTSTAR_BRG);
+
 // Arduino structure
 void setup() {
   // init the tachometer
@@ -118,17 +132,38 @@ void setup() {
   pinMode(PIN_BREAKBEAM, INPUT);
   breakbeamEdgeReset();
 
+  // try gpio on MOSI
+  pinMode(PIN_SPI_GPIO_TEST, INPUT_PULLUP);
+
   // initialize the LED as an output:
   pinMode(PIN_LED, OUTPUT);
 
+  dotStar.begin(); // Initialize pins for output
+  dotStar.setBrightness(80);
+  dotStar.show();  // Turn all LEDs off ASAP
+
   // initialize serial communication:
   Serial.begin(115200);
-  Serial.print("Tach init on pin ");
-  Serial.println(PIN_TACHOMETER, DEC);
+  Serial.print("GPIO init on pin ");
+  Serial.println(PIN_SPI_GPIO_TEST, DEC);
+
   heartbeatTime = millis();
   tachReadTime = heartbeatTime;
 }
 
+// #ff8000
+#define COLOR_RED           0xFF
+#define COLOR_GREEN         0x80
+#define COLOR_BLUE          0x05
+
+#define RGB_BRIGHT_MULT   1.15
+#define RGB_BRIGHT_MAX    0.4
+#define RGB_BRIGHT_MIN    0.05
+float dotStarBrightness = RGB_BRIGHT_MIN;
+
+
+// GPIO testing
+boolean buttonOld = false;
 
 void loop() {
   unsigned long timeCurrent = millis();
@@ -144,6 +179,20 @@ void loop() {
     }
     rpm = tachRPM(tachCountPeriod);
     tachReadTime += TACH_READ_PERIOD;
+
+
+    float dsRed = (float)COLOR_RED * dotStarBrightness;
+    float dsGreen = (float)COLOR_GREEN * dotStarBrightness;
+    float dsBlue = (float)COLOR_BLUE * dotStarBrightness;
+    dotStar.setPixelColor(0, (unsigned char)dsGreen, (unsigned char)dsRed, (unsigned char)dsBlue);
+    //dotStar.setPixelColor(0, 0, (unsigned char)dsRed, 0);
+    dotStar.show();
+    dotStarBrightness *= RGB_BRIGHT_MULT;
+    if(dotStarBrightness > RGB_BRIGHT_MAX) {
+      dotStarBrightness = RGB_BRIGHT_MIN;
+    }
+
+
   }
 
   // update breakbeam
@@ -151,12 +200,15 @@ void loop() {
 
   // heartbeat
   if (timeCurrent > heartbeatTime) {
-    Serial.print("tach counts:");
-    Serial.print(tachCountPeriod, DEC);
-    Serial.print(" RPM:");
-    Serial.print(rpm, DEC);
+    // Serial.print("tach counts:");
+    // Serial.print(tachCountPeriod, DEC);
+    // Serial.print(" RPM:");
+    // Serial.print(rpm, DEC);
 
-    Serial.println("");
+    // Serial.println("");
+
+
+
     heartbeatTime += HEART_BEAT_PERIOD;
   }
 
@@ -170,4 +222,12 @@ void loop() {
     Serial.print(" fps");
     Serial.println("");
   }
+
+  boolean buttonCurrent = buttonRead();
+  if (buttonCurrent && !buttonOld) {
+    Serial.println("button!");
+  }
+  buttonOld = buttonCurrent;
+  delay(5);
+
 }
