@@ -15,10 +15,10 @@ void DRV8870::setSpeed(int motor_speed, int direction)
     pwm = MOTOR_SPEED_MAX - pwm;
     if (direction == CLOCKWISE) {
         analogWrite(this->_motor_pin_1, pwm);
-        digitalWrite(this->_motor_pin_2, HIGH);
+        analogWrite(this->_motor_pin_2, MOTOR_SPEED_MAX);
     }
     else if (direction == COUNTERCLOCKWISE) {
-        digitalWrite(this->_motor_pin_1, HIGH);
+        analogWrite(this->_motor_pin_1, MOTOR_SPEED_MAX);
         analogWrite(this->_motor_pin_2, pwm);
     }
 }
@@ -33,8 +33,8 @@ void DRV8870::brake(int motor_speed)
 
 void DRV8870::coast(void)
 {
-    digitalWrite(this->_motor_pin_1, LOW);
-    digitalWrite(this->_motor_pin_2, LOW);
+    analogWrite(this->_motor_pin_1, 0);
+    analogWrite(this->_motor_pin_2, 0);
 }
 
 int DRV8870::version(void)
