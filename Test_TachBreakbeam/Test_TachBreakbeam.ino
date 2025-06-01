@@ -1,11 +1,18 @@
 #include <Adafruit_DotStar.h>
+#include <DRV8870.h>
 
 
 #define PIN_TACHOMETER            4
 #define PIN_BREAKBEAM             1
-//#define PIN_LED                   13
 #define PIN_MOTOR_TEMP            (A2)
-#define PIN_SPI_GPIO_TEST         24
+#define PIN_SPI_GPIO_TEST         7
+
+#define PIN_PLUNGER_MOTOR_A       12
+#define PIN_PLUNGER_MOTOR_B       11
+
+
+// plunger motor
+DRV8870 pusherMotor(PIN_PLUNGER_MOTOR_A, PIN_PLUNGER_MOTOR_B);
 
 
 // heartbeat
@@ -124,6 +131,9 @@ Adafruit_DotStar dotStar(DOTSTAR_NUM, PIN_DOTSTAR_DATA, PIN_DOTSTAR_CLK, DOTSTAR
 
 // Arduino structure
 void setup() {
+  // init the plunger motor
+  pusherMotor.coast();
+
   // init the tachometer
   pinMode(PIN_TACHOMETER, INPUT);
   attachInterrupt(digitalPinToInterrupt(PIN_TACHOMETER), tachometerISR, RISING);
@@ -152,9 +162,10 @@ void setup() {
 }
 
 // #ff8000
+// #ff0000
 #define COLOR_RED           0xFF
-#define COLOR_GREEN         0x80
-#define COLOR_BLUE          0x05
+#define COLOR_GREEN         0x00
+#define COLOR_BLUE          0x00
 
 #define RGB_BRIGHT_MULT   1.15
 #define RGB_BRIGHT_MAX    0.4
@@ -168,46 +179,17 @@ boolean buttonOld = false;
 void loop() {
   unsigned long timeCurrent = millis();
 
-  // update tachometer
-  if (timeCurrent > tachReadTime) {
-    if (timeCurrent > (tachInterruptTime + TACH_READ_PERIOD)) {
-      // It's been a long time since a tach interupt.  Clear the count
-      tachCount = 0;
-      tachCountPeriod = 0;
-    } else {
-      tachRead = true;
-    }
-    rpm = tachRPM(tachCountPeriod);
-    tachReadTime += TACH_READ_PERIOD;
-
-
-    float dsRed = (float)COLOR_RED * dotStarBrightness;
-    float dsGreen = (float)COLOR_GREEN * dotStarBrightness;
-    float dsBlue = (float)COLOR_BLUE * dotStarBrightness;
-    dotStar.setPixelColor(0, (unsigned char)dsGreen, (unsigned char)dsRed, (unsigned char)dsBlue);
-    //dotStar.setPixelColor(0, 0, (unsigned char)dsRed, 0);
-    dotStar.show();
-    dotStarBrightness *= RGB_BRIGHT_MULT;
-    if(dotStarBrightness > RGB_BRIGHT_MAX) {
-      dotStarBrightness = RGB_BRIGHT_MIN;
-    }
-
-
-  }
-
   // update breakbeam
   breakbeamResetAfterMaxTime();
 
   // heartbeat
   if (timeCurrent > heartbeatTime) {
-    // Serial.print("tach counts:");
-    // Serial.print(tachCountPeriod, DEC);
-    // Serial.print(" RPM:");
-    // Serial.print(rpm, DEC);
+    Serial.print("tach counts:");
+    Serial.print(tachCountPeriod, DEC);
+    Serial.print(" RPM:");
+    Serial.print(rpm, DEC);
 
-    // Serial.println("");
-
-
+    Serial.println("");
 
     heartbeatTime += HEART_BEAT_PERIOD;
   }
@@ -223,11 +205,49 @@ void loop() {
     Serial.println("");
   }
 
+  // update button and test motor
   boolean buttonCurrent = buttonRead();
   if (buttonCurrent && !buttonOld) {
     Serial.println("button!");
   }
   buttonOld = buttonCurrent;
-  delay(5);
 
+  if (buttonCurrent) {
+    pusherMotor.setSpeed(256, CLOCKWISE);
+  } else {
+    pusherMotor.brake(MOTOR_SPEED_MAX);
+    //pusherMotor.coast();
+  }
+
+  // update tachometer
+  if (timeCurrent > tachReadTime) {
+    if (timeCurrent > (tachInterruptTime + TACH_READ_PERIOD)) {
+      // It's been a long time since a tach interupt.  Clear the count
+      tachCount = 0;
+      tachCountPeriod = 0;
+    } else {
+      tachRead = true;
+    }
+    rpm = tachRPM(tachCountPeriod);
+    tachReadTime += TACH_READ_PERIOD;
+
+
+    if (buttonCurrent) {
+      // #008000
+      dotStar.setPixelColor(0, 0x800000);
+    } else {
+      float dsRed = (float)COLOR_RED * dotStarBrightness;
+      float dsGreen = (float)COLOR_GREEN * dotStarBrightness;
+      float dsBlue = (float)COLOR_BLUE * dotStarBrightness;
+      dotStar.setPixelColor(0, (unsigned char)dsGreen, (unsigned char)dsRed, (unsigned char)dsBlue);
+      //dotStar.setPixelColor(0, 0, (unsigned char)dsRed, 0);
+      dotStarBrightness *= RGB_BRIGHT_MULT;
+      if(dotStarBrightness > RGB_BRIGHT_MAX) {
+        dotStarBrightness = RGB_BRIGHT_MIN;
+      }
+    }
+    dotStar.show();
+  }
+
+  delay(5);
 }
