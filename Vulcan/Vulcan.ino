@@ -2,20 +2,31 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Servo.h>
+#include <Adafruit_DotStar.h>
 
 // global variables for main system status
 #define HEARTBEAT_UPDATE_PERIOD         10
-//#define HEARTBEAT_PRINT_PERIOD          250
-#define HEARTBEAT_PRINT_PERIOD          50
+#define HEARTBEAT_PRINT_PERIOD          250
+
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
 
-// flywheel globals
-#define PIN_FLYWHEEL_ESC            10
-//#define PIN_FIRE_MODE               9
-#define PIN_TRIGGER_FIRE            7
-#define PIN_PLUNGER_PWM             5
+// pin assignments
+#define PIN_PLUNGER_PWM             12
+#define PIN_PLUNGER_BACK_SW         10
 
+#define PIN_TRIGGER_MODE_SW         9
+#define PIN_TRIGGER_SW              7
+
+#define PIN_FLYWHEEL_ESC            5
+#define PIN_BREAKBEAM               1
+#define PIN_FLYWHEEL_TACHOMETER     0
+
+#define PIN_SAFETY_JAMDOOR_SW       3
+
+#define PIN_MOTOR_TEMP              (A2)
+
+// flywheel motor constants
 #define FLYWHEEL_MOTOR_ESC_NEUTRAL          90
 #define FLYWHEEL_MOTOR_ESC_REV              160
 #define FLYWHEEL_MOTOR_ESC_REV_HOLD         110
@@ -41,7 +52,8 @@ int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 
 #define PWM_PERCENT(val)                  (((val) * 255) / 100)
 #define PLUNGER_PWM_OFF                   0
-#define PLUNGER_PWM_RUN                   PWM_PERCENT(50)
+//#define PLUNGER_PWM_RUN                   PWM_PERCENT(50)
+#define PLUNGER_PWM_RUN                   PWM_PERCENT(0)
 
 #define LOOP_TIME                         5
 
@@ -55,11 +67,118 @@ int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 // int plungerVel = 0;
 
 //boolean switchTriggerRevRead() {return digitalRead(PIN_TRIGGER_REV); }
-boolean switchTriggerFireRead() {return !digitalRead(PIN_TRIGGER_FIRE); }
+boolean switchTriggerFireRead() {return !digitalRead(PIN_TRIGGER_SW); }
 //boolean switchPlungerEndRead() {return !digitalRead(PIN_PLUNGER_END_SW); }
+
 void plungerPWMSet(int val) {
   analogWrite(PIN_PLUNGER_PWM, val);
 }
+
+
+
+// tachometer
+#define TACH_READ_PERIOD          100
+#define TACH_READ_CONST           (30000 / TACH_READ_PERIOD)
+
+void tachometerISR(void);
+
+unsigned long tachReadTime;
+unsigned long tachInterruptTime;
+boolean tachRead = false;
+int tachCount = 0;
+int tachCountPeriod = 0;
+long rpm = 0;
+
+// Interrupt on rising edge on the tach pin.  two edges per rotation
+void tachometerISR(void) {
+  if(tachRead) {
+    tachCountPeriod = tachCount;
+    tachCount = 0;
+    tachRead = false;
+  }
+  tachInterruptTime = millis();
+  tachCount++;
+}
+
+long tachRPM (long counts) {
+  long rpm = counts * TACH_READ_CONST;
+  return rpm;
+}
+
+
+// breakbeam
+#define BREAKBEAM_IDLE                0
+#define BREAKBEAM_MEASURING           1
+
+#define BREAKBEAM_TIME_MAX            10000
+#define DART_LENGTH_MM                72.0
+#define SENSOR_POS_MM                 10.0
+
+void breakbeamISR(void);
+
+unsigned long breakbeamReadTime;
+unsigned long breakbeamStartTime;
+unsigned long breakbeamEndTime;
+unsigned long breakbeamTime = 0;
+boolean breakbeamState = BREAKBEAM_IDLE;
+#define MM_TO_FOOT    304.8
+
+// Interrupt on rising edge on the breakbeam pin.  Then falling edge.
+void breakbeamEdgeMeasure (void) {
+  attachInterrupt(digitalPinToInterrupt(PIN_BREAKBEAM), breakbeamISR, RISING);
+  breakbeamState = BREAKBEAM_MEASURING;
+}
+
+void breakbeamEdgeReset (void) {
+  attachInterrupt(digitalPinToInterrupt(PIN_BREAKBEAM), breakbeamISR, FALLING);
+  breakbeamState = BREAKBEAM_IDLE;
+  breakbeamTime = 0;
+}
+
+void breakbeamISR(void) {
+  if (breakbeamState == BREAKBEAM_IDLE) {
+    breakbeamStartTime = micros();
+    breakbeamEdgeMeasure();
+  } else {
+    // BREAKBEAM_MEASURING:
+    breakbeamEndTime = micros();
+    breakbeamEdgeReset();
+    breakbeamTime = breakbeamEndTime - breakbeamStartTime;
+  }
+}
+
+void breakbeamResetAfterMaxTime(void) {
+  if (breakbeamState == BREAKBEAM_MEASURING) {
+    unsigned long timeCurrent = micros();
+    if(timeCurrent > (breakbeamStartTime + BREAKBEAM_TIME_MAX)) {
+      breakbeamEdgeReset();
+    }
+  }
+}
+
+unsigned long breakbeamGetDartTime(void) {
+  unsigned long val = breakbeamTime;
+  if (val > 0) {
+    breakbeamTime = 0;
+  }
+  return val;
+}
+
+float dartMicrosToFPS (int timeUS) {
+  float speedFPS = -1.0;
+  if (timeUS > 0) {
+    float speedMMS = DART_LENGTH_MM * 1000000.0 / (float)timeUS;
+    speedFPS = speedMMS / MM_TO_FOOT;
+  }
+  return speedFPS;
+}
+
+// Dot Star
+// Everything is defined in the Board Support Package
+// DOTSTAR_NUM        number of onboard DotStars (typically just 1)
+// PIN_DOTSTAR_DATA   onboard DotStar data pin
+// PIN_DOTSTAR_CLK    onboard DotStar clock pin
+Adafruit_DotStar dotStar(DOTSTAR_NUM, PIN_DOTSTAR_DATA, PIN_DOTSTAR_CLK, DOTSTAR_BRG);
 
 
 
@@ -69,15 +188,32 @@ long plungerStateTimer = 0;
 void setup() {
   // Setup the pins for internal sensing
   //pinMode(PIN_TRIGGER_REV, INPUT_PULLUP);
-  pinMode(PIN_TRIGGER_FIRE, INPUT_PULLUP);
+  pinMode(PIN_TRIGGER_SW, INPUT_PULLUP);
   //pinMode(PIN_PLUNGER_END_SW, INPUT_PULLUP);
   pinMode(PIN_PLUNGER_PWM, OUTPUT);
   plungerPWMSet(0);
 
-  // init the servo
+  // init the esc.  we control it with a servo object
   servoESC.attach(PIN_FLYWHEEL_ESC); // attaches the servo on pin 9 to the servo object
   servoESC.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);  
   
+  // init the tachometer
+  pinMode(PIN_FLYWHEEL_TACHOMETER, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PIN_FLYWHEEL_TACHOMETER), tachometerISR, RISING);
+
+  // init the dart breakbeam sensor
+  pinMode(PIN_BREAKBEAM, INPUT);
+  breakbeamEdgeReset();
+
+  // initialize the LED as an output:
+  pinMode(PIN_LED, OUTPUT);
+
+  dotStar.begin(); // Initialize pins for output
+  dotStar.setBrightness(80);
+  dotStar.show();  // Turn all LEDs off ASAP
+
+
+
 
   // init the serial port for debugging output
   Serial.begin(115200);
@@ -87,8 +223,20 @@ void setup() {
   // reset the heartbeat time to avoid a bunch of initial updates
   heartbeatUpdateTime = millis();
   heartbeatPrintTime = heartbeatUpdateTime;
+  tachReadTime = heartbeatUpdateTime;
   flywheelStateTimer = heartbeatUpdateTime + FLYWHEEL_STATE_STARTUP_DELAY_TIME;
 }
+
+// #ff8000
+// #ff0000
+#define COLOR_RED           0xFF
+#define COLOR_GREEN         0x00
+#define COLOR_BLUE          0x00
+
+#define RGB_BRIGHT_MULT   1.15
+#define RGB_BRIGHT_MAX    0.4
+#define RGB_BRIGHT_MIN    0.05
+float dotStarBrightness = RGB_BRIGHT_MIN;
 
 
 //////// Loop ////////
@@ -102,6 +250,21 @@ int stopSlowITermPWM = 0;
 void loop() {
   long currentTime = millis();
 
+    // update breakbeam
+  breakbeamResetAfterMaxTime();
+
+  unsigned long dartTime = breakbeamGetDartTime();
+  if(dartTime > 0) {
+    int dt = (int)dartTime;
+    Serial.print("  dart:");
+    Serial.print(dartTime, DEC);
+    Serial.print("us, ");
+    Serial.print(dartMicrosToFPS(dt), 1);
+    Serial.print(" fps");
+    Serial.println("");
+  }
+
+
   // run the heartbeat routines
   boolean p = false;
   if (currentTime > heartbeatUpdateTime) {
@@ -111,13 +274,23 @@ void loop() {
       p = true;
     }
     //p = false;
-    //if (p) {Serial.print("hb ");}
+    if (p) {
+      Serial.print("hb ");
+      Serial.print("tach counts:");
+      Serial.print(tachCountPeriod, DEC);
+      Serial.print(" RPM:");
+      Serial.print(rpm, DEC);
+
+      Serial.println("");
+    }
 
     // print diagnostic switch status on serial port
     //if (p) {Serial.print(" trigRev="); Serial.print(switchTriggerRevRead());}
     //if (p) {Serial.print(" trigFire="); Serial.print(switchTriggerFireRead());}
     //if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
     //if (p) {Serial.println("");}
+
+
   }
 
   // the Vulcan is a fully-auto blaster.
@@ -128,6 +301,36 @@ void loop() {
 
   boolean triggerFire = switchTriggerFireRead();
   boolean triggerFireEdge = (triggerFire && !triggerFireOld);
+
+    // update tachometer & Fire LED
+  if (currentTime > tachReadTime) {
+    if (currentTime > (tachInterruptTime + TACH_READ_PERIOD)) {
+      // It's been a long time since a tach interupt.  Clear the count
+      tachCount = 0;
+      tachCountPeriod = 0;
+    } else {
+      tachRead = true;
+    }
+    rpm = tachRPM(tachCountPeriod);
+    tachReadTime += TACH_READ_PERIOD;
+
+
+    if (triggerFire) {
+      // #008000
+      dotStar.setPixelColor(0, 0x800000);
+    } else {
+      float dsRed = (float)COLOR_RED * dotStarBrightness;
+      float dsGreen = (float)COLOR_GREEN * dotStarBrightness;
+      float dsBlue = (float)COLOR_BLUE * dotStarBrightness;
+      dotStar.setPixelColor(0, (unsigned char)dsGreen, (unsigned char)dsRed, (unsigned char)dsBlue);
+      //dotStar.setPixelColor(0, 0, (unsigned char)dsRed, 0);
+      dotStarBrightness *= RGB_BRIGHT_MULT;
+      if(dotStarBrightness > RGB_BRIGHT_MAX) {
+        dotStarBrightness = RGB_BRIGHT_MIN;
+      }
+    }
+    dotStar.show();
+  }
 
 
   switch (flywheelState) {

@@ -1,18 +1,24 @@
 #include <Adafruit_DotStar.h>
-#include <DRV8870.h>
 
-
-#define PIN_TACHOMETER            4
-#define PIN_BREAKBEAM             1
-#define PIN_MOTOR_TEMP            (A2)
-#define PIN_SPI_GPIO_TEST         7
 
 #define PIN_PLUNGER_MOTOR_A       12
-#define PIN_PLUNGER_MOTOR_B       11
+#define PIN_PLUNGER_BACK_SW       10
+
+#define PIN_TRIGGER_MODE_SW       9
+#define PIN_TRIGGER_SW            7
+
+#define PIN_FLYWHEEL_ESC          5
+#define PIN_BREAKBEAM             1
+#define PIN_FLYWHEEL_TACHOMETER   0
+
+#define PIN_SAFETY_JAMDOOR_SW     3
+
+#define PIN_MOTOR_TEMP            (A2)
+
 
 
 // plunger motor
-DRV8870 pusherMotor(PIN_PLUNGER_MOTOR_A, PIN_PLUNGER_MOTOR_B);
+//DRV8870 pusherMotor(PIN_PLUNGER_MOTOR_A, PIN_PLUNGER_MOTOR_B);
 
 
 // heartbeat
@@ -100,7 +106,6 @@ void breakbeamResetAfterMaxTime(void) {
   }
 }
 
-
 unsigned long breakbeamGetDartTime(void) {
   unsigned long val = breakbeamTime;
   if (val > 0) {
@@ -120,7 +125,7 @@ float dartMicrosToFPS (int timeUS) {
 
 
 // GPIO Test
-boolean buttonRead() {return !digitalRead(PIN_SPI_GPIO_TEST); }
+boolean buttonRead() {return !digitalRead(PIN_TRIGGER_SW); }
 
 // Dot Star
 // Everything is defined in the Board Support Package
@@ -132,18 +137,21 @@ Adafruit_DotStar dotStar(DOTSTAR_NUM, PIN_DOTSTAR_DATA, PIN_DOTSTAR_CLK, DOTSTAR
 // Arduino structure
 void setup() {
   // init the plunger motor
-  pusherMotor.coast();
+  //pusherMotor.coast();
+  pinMode(PIN_PLUNGER_MOTOR_A, OUTPUT);
+  digitalWrite(PIN_PLUNGER_MOTOR_A, LOW);
+
 
   // init the tachometer
-  pinMode(PIN_TACHOMETER, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PIN_TACHOMETER), tachometerISR, RISING);
+  pinMode(PIN_FLYWHEEL_TACHOMETER, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PIN_FLYWHEEL_TACHOMETER), tachometerISR, RISING);
 
   // init the dart breakbeam sensor
   pinMode(PIN_BREAKBEAM, INPUT);
   breakbeamEdgeReset();
 
   // try gpio on MOSI
-  pinMode(PIN_SPI_GPIO_TEST, INPUT_PULLUP);
+  pinMode(PIN_TRIGGER_SW, INPUT_PULLUP);
 
   // initialize the LED as an output:
   pinMode(PIN_LED, OUTPUT);
@@ -154,8 +162,8 @@ void setup() {
 
   // initialize serial communication:
   Serial.begin(115200);
-  Serial.print("GPIO init on pin ");
-  Serial.println(PIN_SPI_GPIO_TEST, DEC);
+  Serial.print("trigger init on pin ");
+  Serial.println(PIN_TRIGGER_SW, DEC);
 
   heartbeatTime = millis();
   tachReadTime = heartbeatTime;
@@ -213,13 +221,14 @@ void loop() {
   buttonOld = buttonCurrent;
 
   if (buttonCurrent) {
-    pusherMotor.setSpeed(256, CLOCKWISE);
+    //pusherMotor.setSpeed(255, CLOCKWISE);
+    analogWrite(PIN_PLUNGER_MOTOR_A, 80);
   } else {
-    pusherMotor.brake(MOTOR_SPEED_MAX);
-    //pusherMotor.coast();
+    //pusherMotor.brake(MOTOR_SPEED_MAX);
+    analogWrite(PIN_PLUNGER_MOTOR_A, 0);
   }
 
-  // update tachometer
+  // update tachometer & Fire LED
   if (timeCurrent > tachReadTime) {
     if (timeCurrent > (tachInterruptTime + TACH_READ_PERIOD)) {
       // It's been a long time since a tach interupt.  Clear the count
