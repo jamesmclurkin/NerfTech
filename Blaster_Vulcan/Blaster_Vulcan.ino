@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <Adafruit_DotStar.h>
+#include <Tachometer.h>
 
 // global variables for main system status
 #define HEARTBEAT_UPDATE_PERIOD         10
@@ -74,36 +75,6 @@ void plungerPWMSet(int val) {
   analogWrite(PIN_PLUNGER_PWM, val);
 }
 
-
-
-// tachometer
-#define TACH_READ_PERIOD          100
-#define TACH_READ_CONST           (30000 / TACH_READ_PERIOD)
-
-void tachometerISR(void);
-
-unsigned long tachReadTime;
-unsigned long tachInterruptTime;
-boolean tachRead = false;
-int tachCount = 0;
-int tachCountPeriod = 0;
-long rpm = 0;
-
-// Interrupt on rising edge on the tach pin.  two edges per rotation
-void tachometerISR(void) {
-  if(tachRead) {
-    tachCountPeriod = tachCount;
-    tachCount = 0;
-    tachRead = false;
-  }
-  tachInterruptTime = millis();
-  tachCount++;
-}
-
-long tachometerRPM (long counts) {
-  long rpm = counts * TACH_READ_CONST;
-  return rpm;
-}
 
 
 // breakbeam
@@ -223,7 +194,6 @@ void setup() {
   // reset the heartbeat time to avoid a bunch of initial updates
   heartbeatUpdateTime = millis();
   heartbeatPrintTime = heartbeatUpdateTime;
-  tachReadTime = heartbeatUpdateTime;
   flywheelStateTimer = heartbeatUpdateTime + FLYWHEEL_STATE_STARTUP_DELAY_TIME;
 }
 
@@ -303,18 +273,7 @@ void loop() {
   boolean triggerFireEdge = (triggerFire && !triggerFireOld);
 
     // update tachometer & Fire LED
-  if (currentTime > tachReadTime) {
-    if (currentTime > (tachInterruptTime + TACH_READ_PERIOD)) {
-      // It's been a long time since a tach interupt.  Clear the count
-      tachCount = 0;
-      tachCountPeriod = 0;
-    } else {
-      tachRead = true;
-    }
-    rpm = tachometerRPM(tachCountPeriod);
-    tachReadTime += TACH_READ_PERIOD;
-
-
+  if (currentTime > LEDUpdateTime) {
     if (triggerFire) {
       //dotStar.setPixelColor(0, 0x800000);
       if (rpm > PLUNGER_MIN_RPM) {
