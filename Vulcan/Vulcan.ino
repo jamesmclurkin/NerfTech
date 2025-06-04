@@ -49,11 +49,11 @@ unsigned long heartbeatPrintTime = 0;
 Servo servoESC;
 int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 
+#define PLUNGER_MIN_RPM                     25000
 
 #define PWM_PERCENT(val)                  (((val) * 255) / 100)
 #define PLUNGER_PWM_OFF                   0
-//#define PLUNGER_PWM_RUN                   PWM_PERCENT(50)
-#define PLUNGER_PWM_RUN                   PWM_PERCENT(0)
+#define PLUNGER_PWM_RUN                   PWM_PERCENT(50)
 
 #define LOOP_TIME                         5
 
@@ -100,7 +100,7 @@ void tachometerISR(void) {
   tachCount++;
 }
 
-long tachRPM (long counts) {
+long tachometerRPM (long counts) {
   long rpm = counts * TACH_READ_CONST;
   return rpm;
 }
@@ -275,9 +275,9 @@ void loop() {
     }
     //p = false;
     if (p) {
-      Serial.print("hb ");
-      Serial.print("tach counts:");
-      Serial.print(tachCountPeriod, DEC);
+      //Serial.print("hb ");
+      //Serial.print("tach counts:");
+      //Serial.print(tachCountPeriod, DEC);
       Serial.print(" RPM:");
       Serial.print(rpm, DEC);
 
@@ -311,22 +311,34 @@ void loop() {
     } else {
       tachRead = true;
     }
-    rpm = tachRPM(tachCountPeriod);
+    rpm = tachometerRPM(tachCountPeriod);
     tachReadTime += TACH_READ_PERIOD;
 
 
     if (triggerFire) {
-      // #008000
-      dotStar.setPixelColor(0, 0x800000);
+      //dotStar.setPixelColor(0, 0x800000);
+      if (rpm > PLUNGER_MIN_RPM) {
+        // #00FF00
+        dotStar.setPixelColor(0, 0x00FF00);    
+      } else {
+        // #FFFF00
+        dotStar.setPixelColor(0, 0xFFFF00);    
+      }
     } else {
-      float dsRed = (float)COLOR_RED * dotStarBrightness;
-      float dsGreen = (float)COLOR_GREEN * dotStarBrightness;
-      float dsBlue = (float)COLOR_BLUE * dotStarBrightness;
-      dotStar.setPixelColor(0, (unsigned char)dsGreen, (unsigned char)dsRed, (unsigned char)dsBlue);
-      //dotStar.setPixelColor(0, 0, (unsigned char)dsRed, 0);
-      dotStarBrightness *= RGB_BRIGHT_MULT;
-      if(dotStarBrightness > RGB_BRIGHT_MAX) {
-        dotStarBrightness = RGB_BRIGHT_MIN;
+      if (rpm > PLUNGER_MIN_RPM) {
+        // #008000
+        dotStar.setPixelColor(0, 0x004000);    
+      } else {
+        float dsRed = (float)COLOR_RED * dotStarBrightness;
+        float dsGreen = (float)COLOR_GREEN * dotStarBrightness;
+        float dsBlue = (float)COLOR_BLUE * dotStarBrightness;
+        //dotStar.setPixelColor(0, (unsigned char)dsGreen, (unsigned char)dsRed, (unsigned char)dsBlue);
+        dotStar.setPixelColor(0, (unsigned char)dsRed, (unsigned char)dsGreen, (unsigned char)dsBlue);
+        //dotStar.setPixelColor(0, 0, (unsigned char)dsRed, 0);
+        dotStarBrightness *= RGB_BRIGHT_MULT;
+        if(dotStarBrightness > RGB_BRIGHT_MAX) {
+          dotStarBrightness = RGB_BRIGHT_MIN;
+        }
       }
     }
     dotStar.show();
@@ -361,7 +373,8 @@ void loop() {
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_REV_HOLD_TIME;
         Serial.println("rev->revhold");
       }
-      if (currentTime > flywheelStateTimer) {
+      //if (currentTime > flywheelStateTimer) {
+      if (rpm > PLUNGER_MIN_RPM) {
         flywheelState = FLYWHEEL_STATE_FIRE;
         Serial.println("rev->fire");
       }
