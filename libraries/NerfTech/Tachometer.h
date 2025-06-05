@@ -11,19 +11,9 @@
 #define TACHOMETER_H
 
 #include "Arduino.h"
-#if defined(ESP32)
-#include <analogWrite.h>
-#endif
-#if defined(ESP8266)
-#include <analogWrite.h>
-#endif
 
 class Tachometer
 {
-private:
-    // The library version number
-    int _version = 2;
-    
 public:
   /** Creates a tqachometer control interface
    *
@@ -43,12 +33,6 @@ public:
    *
    */
   long rpm(void);
-
-  /** Returns the version of the library
-   *
-   *
-   */
-  int version(void);
 };
 
 #endif // TACHOMETER_H

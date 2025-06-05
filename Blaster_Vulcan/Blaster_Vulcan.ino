@@ -5,6 +5,7 @@
 #include <Adafruit_DotStar.h>
 //#include <NerfTech.h>
 #include <Tachometer.h>
+#include <BreakBeam.h>
 
 // global variables for main system status
 #define HEARTBEAT_UPDATE_PERIOD         10
@@ -80,72 +81,6 @@ void plungerPWMSet(int val) {
 
 
 
-// breakbeam
-#define BREAKBEAM_IDLE                0
-#define BREAKBEAM_MEASURING           1
-
-#define BREAKBEAM_TIME_MAX            10000
-#define DART_LENGTH_MM                72.0
-#define SENSOR_POS_MM                 10.0
-
-void breakbeamISR(void);
-
-unsigned long breakbeamReadTime;
-unsigned long breakbeamStartTime;
-unsigned long breakbeamEndTime;
-unsigned long breakbeamTime = 0;
-boolean breakbeamState = BREAKBEAM_IDLE;
-#define MM_TO_FOOT    304.8
-
-// Interrupt on rising edge on the breakbeam pin.  Then falling edge.
-void breakbeamEdgeMeasure (void) {
-  attachInterrupt(digitalPinToInterrupt(PIN_BREAKBEAM), breakbeamISR, RISING);
-  breakbeamState = BREAKBEAM_MEASURING;
-}
-
-void breakbeamEdgeReset (void) {
-  attachInterrupt(digitalPinToInterrupt(PIN_BREAKBEAM), breakbeamISR, FALLING);
-  breakbeamState = BREAKBEAM_IDLE;
-  breakbeamTime = 0;
-}
-
-void breakbeamISR(void) {
-  if (breakbeamState == BREAKBEAM_IDLE) {
-    breakbeamStartTime = micros();
-    breakbeamEdgeMeasure();
-  } else {
-    // BREAKBEAM_MEASURING:
-    breakbeamEndTime = micros();
-    breakbeamEdgeReset();
-    breakbeamTime = breakbeamEndTime - breakbeamStartTime;
-  }
-}
-
-void breakbeamResetAfterMaxTime(void) {
-  if (breakbeamState == BREAKBEAM_MEASURING) {
-    unsigned long timeCurrent = micros();
-    if(timeCurrent > (breakbeamStartTime + BREAKBEAM_TIME_MAX)) {
-      breakbeamEdgeReset();
-    }
-  }
-}
-
-unsigned long breakbeamGetDartTime(void) {
-  unsigned long val = breakbeamTime;
-  if (val > 0) {
-    breakbeamTime = 0;
-  }
-  return val;
-}
-
-float dartMicrosToFPS (int timeUS) {
-  float speedFPS = -1.0;
-  if (timeUS > 0) {
-    float speedMMS = DART_LENGTH_MM * 1000000.0 / (float)timeUS;
-    speedFPS = speedMMS / MM_TO_FOOT;
-  }
-  return speedFPS;
-}
 
 // Dot Star
 // Everything is defined in the Board Support Package
@@ -153,12 +88,14 @@ float dartMicrosToFPS (int timeUS) {
 // PIN_DOTSTAR_DATA   onboard DotStar data pin
 // PIN_DOTSTAR_CLK    onboard DotStar clock pin
 Adafruit_DotStar dotStar(DOTSTAR_NUM, PIN_DOTSTAR_DATA, PIN_DOTSTAR_CLK, DOTSTAR_BRG);
+Tachometer tach(PIN_FLYWHEEL_TACHOMETER);
+BreakBeam breakbeam(PIN_BREAKBEAM);
 
 
 
 long flywheelStateTimer = 0;
 long plungerStateTimer = 0;
-Tachometer tach(PIN_FLYWHEEL_TACHOMETER);
+
 
 void setup() {
   // Setup the pins for internal sensing
@@ -172,11 +109,7 @@ void setup() {
   servoESC.attach(PIN_FLYWHEEL_ESC); // attaches the servo on pin 9 to the servo object
   servoESC.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);  
   
-  // init the dart breakbeam sensor
-  pinMode(PIN_BREAKBEAM, INPUT);
-  breakbeamEdgeReset();
-
-  // initialize the LED as an output:
+  // initialize the blinky LED as an output:
   pinMode(PIN_LED, OUTPUT);
 
   dotStar.begin(); // Initialize pins for output
@@ -222,17 +155,16 @@ void loop() {
   long currentTime = millis();
 
   tach.update(currentTime);
+  breakbeam.update(currentTime);
 
-    // update breakbeam
-  breakbeamResetAfterMaxTime();
 
-  unsigned long dartTime = breakbeamGetDartTime();
-  if(dartTime > 0) {
-    int dt = (int)dartTime;
+  // print dart stats if there is a new dart
+  float dartSpeed = breakbeam.getNewDartSpeedFPS();
+  if(dartSpeed > 0.0) {
     Serial.print("  dart:");
-    Serial.print(dartTime, DEC);
+    Serial.print(breakbeam.getLastDartTimeUS(), DEC);
     Serial.print("us, ");
-    Serial.print(dartMicrosToFPS(dt), 1);
+    Serial.print(dartSpeed, 1);
     Serial.print(" fps");
     Serial.println("");
   }
@@ -262,8 +194,6 @@ void loop() {
     //if (p) {Serial.print(" trigFire="); Serial.print(switchTriggerFireRead());}
     //if (p) {Serial.print(F(" jam=")); Serial.print(jamDoorRead());}
     //if (p) {Serial.println("");}
-
-
   }
 
   // the Vulcan is a fully-auto blaster.
@@ -275,7 +205,7 @@ void loop() {
   boolean triggerFire = switchTriggerFireRead();
   boolean triggerFireEdge = (triggerFire && !triggerFireOld);
 
-    // update tachometer & Fire LED
+    // update LED
   if (currentTime > LEDUpdateTime) {
     if (triggerFire) {
       //dotStar.setPixelColor(0, 0x800000);
