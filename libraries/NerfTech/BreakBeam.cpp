@@ -43,7 +43,7 @@ void breakbeamISR(void) {
     breakbeamEndTime = micros();
     breakbeamEdgeReset();
     breakbeamLastDartTime = breakbeamEndTime - breakbeamStartTime;
-    //TODO: check for microsecond overflow here
+    //TODO check for microsecond overflow here
     breakbeamNewDart = true;
   }
 }
@@ -61,6 +61,7 @@ void BreakBeam::update(unsigned long currentTime)
   // reset the breakbeam state after BREAKBEAM_TIME_MAX
   if (breakbeamState == BREAKBEAM_MEASURING) {
     unsigned long timeCurrent = micros();
+    //TODO check for microsecond overflow here
     if(timeCurrent > (breakbeamStartTime + BREAKBEAM_TIME_MAX)) {
       breakbeamEdgeReset();
     }

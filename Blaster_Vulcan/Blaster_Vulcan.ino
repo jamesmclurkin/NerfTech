@@ -56,11 +56,11 @@ int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 
 #define PLUNGER_MIN_RPM                     25000
 
-#define PWM_PERCENT(val)                  (((val) * 255) / 100)
-#define PLUNGER_PWM_OFF                   0
-#define PLUNGER_PWM_RUN                   PWM_PERCENT(50)
+#define PWM_PERCENT(val)                    (((val) * 255) / 100)
+#define PLUNGER_PWM_OFF                     0
+#define PLUNGER_PWM_RUN                     PWM_PERCENT(50)
 
-#define LOOP_TIME                         5
+#define LOOP_TIME                           5
 
 // // plunger motor model constaqnts
 // #define PLUNGER_PWM_MAX                   255
@@ -88,7 +88,9 @@ void plungerPWMSet(int val) {
 // PIN_DOTSTAR_DATA   onboard DotStar data pin
 // PIN_DOTSTAR_CLK    onboard DotStar clock pin
 Adafruit_DotStar dotStar(DOTSTAR_NUM, PIN_DOTSTAR_DATA, PIN_DOTSTAR_CLK, DOTSTAR_BRG);
+
 Tachometer tach(PIN_FLYWHEEL_TACHOMETER);
+
 BreakBeam breakbeam(PIN_BREAKBEAM);
 
 
@@ -102,6 +104,7 @@ void setup() {
   //pinMode(PIN_TRIGGER_REV, INPUT_PULLUP);
   pinMode(PIN_TRIGGER_SW, INPUT_PULLUP);
   //pinMode(PIN_PLUNGER_END_SW, INPUT_PULLUP);
+
   pinMode(PIN_PLUNGER_PWM, OUTPUT);
   plungerPWMSet(0);
 
@@ -115,9 +118,6 @@ void setup() {
   dotStar.begin(); // Initialize pins for output
   dotStar.setBrightness(80);
   dotStar.show();  // Turn all LEDs off ASAP
-
-
-
 
   // init the serial port for debugging output
   Serial.begin(115200);
