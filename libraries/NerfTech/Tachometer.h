@@ -10,9 +10,6 @@
 #ifndef TACHOMETER_H
 #define TACHOMETER_H
 
-#define TACH_READ_PERIOD          100
-#define TACH_READ_CONST           (30000 / TACH_READ_PERIOD)
-
 #include "Arduino.h"
 #if defined(ESP32)
 #include <analogWrite.h>

@@ -1,6 +1,10 @@
 #include <Arduino.h>
 #include "Tachometer.h"
 
+#define TACH_READ_PERIOD          100
+#define TACH_READ_CONST           (30000 / TACH_READ_PERIOD)
+
+
 void tachometerISR(void);
 
 int _tachometer_pin;

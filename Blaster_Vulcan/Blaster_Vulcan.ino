@@ -3,15 +3,17 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <Adafruit_DotStar.h>
-#include <NerfTech.h>
+//#include <NerfTech.h>
 #include <Tachometer.h>
 
 // global variables for main system status
 #define HEARTBEAT_UPDATE_PERIOD         10
 #define HEARTBEAT_PRINT_PERIOD          250
+#define LED_UPDATE_PERIOD               20
 
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
+unsigned long LEDUpdateTime = 0;
 
 // pin assignments
 #define PIN_PLUNGER_PWM             12
@@ -201,10 +203,11 @@ void setup() {
 #define COLOR_GREEN         0x00
 #define COLOR_BLUE          0x00
 
-#define RGB_BRIGHT_MULT   1.15
+#define RGB_BRIGHT_MULT   1.1
 #define RGB_BRIGHT_MAX    0.4
 #define RGB_BRIGHT_MIN    0.05
 float dotStarBrightness = RGB_BRIGHT_MIN;
+boolean dotStarBrightnessAscending = true;
 
 
 //////// Loop ////////
@@ -218,7 +221,7 @@ int stopSlowITermPWM = 0;
 void loop() {
   long currentTime = millis();
 
-  tach.update(currentrTime);
+  tach.update(currentTime);
 
     // update breakbeam
   breakbeamResetAfterMaxTime();
@@ -294,13 +297,23 @@ void loop() {
         //dotStar.setPixelColor(0, (unsigned char)dsGreen, (unsigned char)dsRed, (unsigned char)dsBlue);
         dotStar.setPixelColor(0, (unsigned char)dsRed, (unsigned char)dsGreen, (unsigned char)dsBlue);
         //dotStar.setPixelColor(0, 0, (unsigned char)dsRed, 0);
-        dotStarBrightness *= RGB_BRIGHT_MULT;
-        if(dotStarBrightness > RGB_BRIGHT_MAX) {
-          dotStarBrightness = RGB_BRIGHT_MIN;
+        if(dotStarBrightnessAscending) {
+          dotStarBrightness *= RGB_BRIGHT_MULT;
+          if(dotStarBrightness > RGB_BRIGHT_MAX) {
+            dotStarBrightness = RGB_BRIGHT_MAX;
+            dotStarBrightnessAscending = false;
+          }
+        } else {
+          dotStarBrightness /= RGB_BRIGHT_MULT;
+          if(dotStarBrightness < RGB_BRIGHT_MIN) {
+            dotStarBrightness = RGB_BRIGHT_MIN;
+            dotStarBrightnessAscending = true;
+          }
         }
       }
     }
     dotStar.show();
+    LEDUpdateTime += LED_UPDATE_PERIOD;
   }
 
 
