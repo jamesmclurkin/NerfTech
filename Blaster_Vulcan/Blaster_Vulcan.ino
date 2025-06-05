@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <Adafruit_DotStar.h>
+#include <NerfTech.h>
 #include <Tachometer.h>
 
 // global variables for main system status
@@ -155,6 +156,7 @@ Adafruit_DotStar dotStar(DOTSTAR_NUM, PIN_DOTSTAR_DATA, PIN_DOTSTAR_CLK, DOTSTAR
 
 long flywheelStateTimer = 0;
 long plungerStateTimer = 0;
+Tachometer tach(PIN_FLYWHEEL_TACHOMETER);
 
 void setup() {
   // Setup the pins for internal sensing
@@ -168,10 +170,6 @@ void setup() {
   servoESC.attach(PIN_FLYWHEEL_ESC); // attaches the servo on pin 9 to the servo object
   servoESC.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);  
   
-  // init the tachometer
-  pinMode(PIN_FLYWHEEL_TACHOMETER, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PIN_FLYWHEEL_TACHOMETER), tachometerISR, RISING);
-
   // init the dart breakbeam sensor
   pinMode(PIN_BREAKBEAM, INPUT);
   breakbeamEdgeReset();
@@ -220,6 +218,8 @@ int stopSlowITermPWM = 0;
 void loop() {
   long currentTime = millis();
 
+  tach.update(currentrTime);
+
     // update breakbeam
   breakbeamResetAfterMaxTime();
 
@@ -249,7 +249,7 @@ void loop() {
       //Serial.print("tach counts:");
       //Serial.print(tachCountPeriod, DEC);
       Serial.print(" RPM:");
-      Serial.print(rpm, DEC);
+      Serial.print(tach.rpm(), DEC);
 
       Serial.println("");
     }
@@ -276,7 +276,7 @@ void loop() {
   if (currentTime > LEDUpdateTime) {
     if (triggerFire) {
       //dotStar.setPixelColor(0, 0x800000);
-      if (rpm > PLUNGER_MIN_RPM) {
+      if (tach.rpm() > PLUNGER_MIN_RPM) {
         // #00FF00
         dotStar.setPixelColor(0, 0x00FF00);    
       } else {
@@ -284,7 +284,7 @@ void loop() {
         dotStar.setPixelColor(0, 0xFFFF00);    
       }
     } else {
-      if (rpm > PLUNGER_MIN_RPM) {
+      if (tach.rpm() > PLUNGER_MIN_RPM) {
         // #008000
         dotStar.setPixelColor(0, 0x004000);    
       } else {
@@ -333,7 +333,7 @@ void loop() {
         Serial.println("rev->revhold");
       }
       //if (currentTime > flywheelStateTimer) {
-      if (rpm > PLUNGER_MIN_RPM) {
+      if (tach.rpm() > PLUNGER_MIN_RPM) {
         flywheelState = FLYWHEEL_STATE_FIRE;
         Serial.println("rev->fire");
       }

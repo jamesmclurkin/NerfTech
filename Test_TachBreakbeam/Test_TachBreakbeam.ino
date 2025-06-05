@@ -32,22 +32,22 @@ unsigned long heartbeatTime;
 
 void tachometerISR(void);
 
-unsigned long tachReadTime;
-unsigned long tachInterruptTime;
-boolean tachRead = false;
-int tachCount = 0;
+unsigned long _tachReadTime;
+unsigned long _tachInterruptTime;
+boolean _tachRead = false;
+int _tachCount = 0;
 int tachCountPeriod = 0;
 long rpm = 0;
 
 // Interrupt on rising edge on the tach pin.  two edges per rotation
 void tachometerISR(void) {
-  if(tachRead) {
-    tachCountPeriod = tachCount;
-    tachCount = 0;
-    tachRead = false;
+  if(_tachRead) {
+    tachCountPeriod = _tachCount;
+    _tachCount = 0;
+    _tachRead = false;
   }
-  tachInterruptTime = millis();
-  tachCount++;
+  _tachInterruptTime = millis();
+  _tachCount++;
 }
 
 long tachRPM (long counts) {
@@ -166,7 +166,7 @@ void setup() {
   Serial.println(PIN_TRIGGER_SW, DEC);
 
   heartbeatTime = millis();
-  tachReadTime = heartbeatTime;
+  _tachReadTime = heartbeatTime;
 }
 
 // #ff8000
@@ -229,16 +229,16 @@ void loop() {
   }
 
   // update tachometer & Fire LED
-  if (timeCurrent > tachReadTime) {
-    if (timeCurrent > (tachInterruptTime + TACH_READ_PERIOD)) {
+  if (timeCurrent > _tachReadTime) {
+    if (timeCurrent > (_tachInterruptTime + TACH_READ_PERIOD)) {
       // It's been a long time since a tach interupt.  Clear the count
-      tachCount = 0;
+      _tachCount = 0;
       tachCountPeriod = 0;
     } else {
-      tachRead = true;
+      _tachRead = true;
     }
     rpm = tachRPM(tachCountPeriod);
-    tachReadTime += TACH_READ_PERIOD;
+    _tachReadTime += TACH_READ_PERIOD;
 
 
     if (buttonCurrent) {
