@@ -10,8 +10,9 @@
 #ifndef NERFTECH_H
 #define NERFTECH_H
 
-#include "Arduino.h"
-#include "Tachometer.h"
+#include <Tachometer.h>
+#include <BreakBeam.h>
+#include <MotorDriver.h>
 
 #if defined(ESP32)
 #include <analogWrite.h>

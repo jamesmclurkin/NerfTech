@@ -17,10 +17,10 @@ class Tachometer
 public:
   /** Creates a tqachometer control interface
    *
-   * @param tachometer_pin An interrupt-enabled pin to read the counts from the tach
+   * @param pin An interrupt-enabled pin to read the counts from the tach
    *
    */
-  Tachometer(int tachometer_pin);
+  Tachometer(int pin);
 
   /** Returns the current rpm
    *

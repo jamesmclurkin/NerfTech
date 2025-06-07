@@ -3,9 +3,7 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <Adafruit_DotStar.h>
-//#include <NerfTech.h>
-#include <Tachometer.h>
-#include <BreakBeam.h>
+#include <NerfTech.h>
 
 // global variables for main system status
 #define HEARTBEAT_UPDATE_PERIOD         10
@@ -32,10 +30,10 @@ unsigned long LEDUpdateTime = 0;
 #define PIN_MOTOR_TEMP              (A2)
 
 // flywheel motor constants
-#define FLYWHEEL_MOTOR_ESC_NEUTRAL          90
-#define FLYWHEEL_MOTOR_ESC_REV              160
-#define FLYWHEEL_MOTOR_ESC_REV_HOLD         110
-#define FLYWHEEL_MOTOR_ESC_BRAKE            20
+#define FLYWHEEL_MOTOR_SPEED_NEUTRAL          0
+#define FLYWHEEL_MOTOR_SPEED_REV              100
+#define FLYWHEEL_MOTOR_SPEED_REV_HOLD         75
+#define FLYWHEEL_MOTOR_STRENGTH_BRAKE         100
 
 #define FLYWHEEL_STATE_STARTUP_DELAY        0
 #define FLYWHEEL_STATE_NEUTRAL              1
@@ -51,35 +49,19 @@ unsigned long LEDUpdateTime = 0;
 #define FLYWHEEL_STATE_REV_HOLD_TIME        1000
 #define FLYWHEEL_STATE_BRAKE_TIME           600
 
-Servo servoESC;
 int flywheelState = FLYWHEEL_STATE_STARTUP_DELAY;
 
-#define PLUNGER_MIN_RPM                     25000
+#define PUSHER_MIN_RPM                       25000
 
-#define PWM_PERCENT(val)                    (((val) * 255) / 100)
-#define PLUNGER_PWM_OFF                     0
-#define PLUNGER_PWM_RUN                     PWM_PERCENT(50)
+#define PUSHER_SPEED_OFF                     0.0
+#define PUSHER_SPEED_RUN                     50.0
 
 #define LOOP_TIME                           5
 
-// // plunger motor model constaqnts
-// #define PLUNGER_PWM_MAX                   255
-// #define PLUNGER_VEL_MAX                   255
-// #define PLUNGER_VEL_STEP_UP               ((int)((6 * LOOP_TIME) / 5))
-// #define PLUNGER_VEL_STEP_DOWN             ((int)((3 * LOOP_TIME) / 5))
-// #define PLUNGER_VEL_STOP_THRESHOLD        PWM_PERCENT(60)
-// #define PLUNGER_VEL_ITERM                 ((int)((3 * LOOP_TIME) / 5))
-// int plungerVel = 0;
 
 //boolean switchTriggerRevRead() {return digitalRead(PIN_TRIGGER_REV); }
 boolean switchTriggerFireRead() {return !digitalRead(PIN_TRIGGER_SW); }
 //boolean switchPlungerEndRead() {return !digitalRead(PIN_PLUNGER_END_SW); }
-
-void plungerPWMSet(int val) {
-  analogWrite(PIN_PLUNGER_PWM, val);
-}
-
-
 
 
 // Dot Star
@@ -93,8 +75,12 @@ Tachometer tach(PIN_FLYWHEEL_TACHOMETER);
 
 BreakBeam breakbeam(PIN_BREAKBEAM);
 
+MotorDriver flywheelMotor(MOTOR_TYPE_BRUSHED_ESC, PIN_FLYWHEEL_ESC);
+
+MotorDriver pusherMotor(MOTOR_TYPE_LOWSIDE_DRIVER, PIN_PLUNGER_PWM);
 
 
+// custom code for hte Vulcan blaster
 long flywheelStateTimer = 0;
 long plungerStateTimer = 0;
 
@@ -105,12 +91,6 @@ void setup() {
   pinMode(PIN_TRIGGER_SW, INPUT_PULLUP);
   //pinMode(PIN_PLUNGER_END_SW, INPUT_PULLUP);
 
-  pinMode(PIN_PLUNGER_PWM, OUTPUT);
-  plungerPWMSet(0);
-
-  // init the esc.  we control it with a servo object
-  servoESC.attach(PIN_FLYWHEEL_ESC); // attaches the servo on pin 9 to the servo object
-  servoESC.write(FLYWHEEL_MOTOR_ESC_NEUTRAL);  
   
   // initialize the blinky LED as an output:
   pinMode(PIN_LED, OUTPUT);
@@ -199,8 +179,6 @@ void loop() {
   // the Vulcan is a fully-auto blaster.
   // when the fire trigger is pulled, rev the flywheel, wait a few seconds
   // then start the plunger (belt) motor
-  int ESCPos = FLYWHEEL_MOTOR_ESC_NEUTRAL;
-  int plungerPWM = PLUNGER_PWM_OFF;
 
   boolean triggerFire = switchTriggerFireRead();
   boolean triggerFireEdge = (triggerFire && !triggerFireOld);
@@ -209,7 +187,7 @@ void loop() {
   if (currentTime > LEDUpdateTime) {
     if (triggerFire) {
       //dotStar.setPixelColor(0, 0x800000);
-      if (tach.rpm() > PLUNGER_MIN_RPM) {
+      if (tach.rpm() > PUSHER_MIN_RPM) {
         // #00FF00
         dotStar.setPixelColor(0, 0x00FF00);    
       } else {
@@ -217,7 +195,7 @@ void loop() {
         dotStar.setPixelColor(0, 0xFFFF00);    
       }
     } else {
-      if (tach.rpm() > PLUNGER_MIN_RPM) {
+      if (tach.rpm() > PUSHER_MIN_RPM) {
         // #008000
         dotStar.setPixelColor(0, 0x004000);    
       } else {
@@ -249,8 +227,8 @@ void loop() {
 
   switch (flywheelState) {
     case FLYWHEEL_STATE_STARTUP_DELAY: {
-      ESCPos = FLYWHEEL_MOTOR_ESC_NEUTRAL;      
-      plungerPWM = PLUNGER_PWM_OFF;
+      flywheelMotor.coast();
+      pusherMotor.coast();
       if (currentTime > flywheelStateTimer) {
         flywheelState = FLYWHEEL_STATE_NEUTRAL;
         Serial.println("startup->neutral");
@@ -258,8 +236,8 @@ void loop() {
       break;
     }
     case FLYWHEEL_STATE_NEUTRAL: {
-      ESCPos = FLYWHEEL_MOTOR_ESC_NEUTRAL;
-      plungerPWM = PLUNGER_PWM_OFF;
+      flywheelMotor.coast();
+      pusherMotor.coast();
       if (triggerFire) {
         flywheelState = FLYWHEEL_STATE_REV_BEFORE_AUTO;
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_REV_UP_TIME;
@@ -268,23 +246,23 @@ void loop() {
       break;
     }
     case FLYWHEEL_STATE_REV_BEFORE_AUTO: {
-      ESCPos = FLYWHEEL_MOTOR_ESC_REV;
-      plungerPWM = PLUNGER_PWM_OFF;
+      flywheelMotor.forward(FLYWHEEL_MOTOR_SPEED_REV);
+      pusherMotor.coast();
       if (!triggerFire) {
         flywheelState = FLYWHEEL_STATE_REV_HOLD;
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_REV_HOLD_TIME;
         Serial.println("rev->revhold");
       }
       //if (currentTime > flywheelStateTimer) {
-      if (tach.rpm() > PLUNGER_MIN_RPM) {
+      if (tach.rpm() > PUSHER_MIN_RPM) {
         flywheelState = FLYWHEEL_STATE_FIRE;
         Serial.println("rev->fire");
       }
       break;
     }
     case FLYWHEEL_STATE_FIRE: {
-      ESCPos = FLYWHEEL_MOTOR_ESC_REV;
-      plungerPWM = PLUNGER_PWM_RUN;
+      flywheelMotor.forward(FLYWHEEL_MOTOR_SPEED_REV);
+      pusherMotor.forward(PUSHER_SPEED_RUN);
       if (!triggerFire) {
         flywheelState = FLYWHEEL_STATE_REV_HOLD;
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_REV_HOLD_TIME;
@@ -293,8 +271,8 @@ void loop() {
       break;
     }
     case FLYWHEEL_STATE_REV_HOLD: {
-      ESCPos = FLYWHEEL_MOTOR_ESC_REV_HOLD;
-      plungerPWM = PLUNGER_PWM_OFF;
+      flywheelMotor.forward(FLYWHEEL_MOTOR_SPEED_REV_HOLD);
+      pusherMotor.coast();
       if (triggerFire) {
         flywheelState = FLYWHEEL_STATE_REREV;
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_REREV_TIME;
@@ -308,22 +286,23 @@ void loop() {
       break;
     }
     case FLYWHEEL_STATE_REREV: {
-      ESCPos = FLYWHEEL_MOTOR_ESC_REV;
-      plungerPWM = PLUNGER_PWM_OFF;
+      flywheelMotor.forward(FLYWHEEL_MOTOR_SPEED_REV);
+      pusherMotor.coast();
       if (!triggerFire) {
         flywheelState = FLYWHEEL_STATE_REV_HOLD;
         flywheelStateTimer = currentTime + FLYWHEEL_STATE_REV_HOLD_TIME;
         Serial.println("rerev->revhold");
       }
-      if (currentTime > flywheelStateTimer) {
+      if (tach.rpm() > PUSHER_MIN_RPM) {
+      //if (currentTime > flywheelStateTimer) {
         flywheelState = FLYWHEEL_STATE_FIRE;
         Serial.println("rerev->fire");
       }
       break;
     }
     case FLYWHEEL_STATE_BRAKE: {
-      ESCPos = FLYWHEEL_MOTOR_ESC_BRAKE;      
-      plungerPWM = PLUNGER_PWM_OFF;
+      flywheelMotor.brake(FLYWHEEL_MOTOR_STRENGTH_BRAKE);
+      pusherMotor.coast();
       if (triggerFire) {
         flywheelState = FLYWHEEL_STATE_REV_BEFORE_AUTO;
         Serial.println("brake->rev");
@@ -337,14 +316,11 @@ void loop() {
     }
     default: {
       flywheelState = FLYWHEEL_STATE_NEUTRAL;
-      ESCPos = FLYWHEEL_MOTOR_ESC_NEUTRAL;
-      plungerPWM = PLUNGER_PWM_OFF;
+      flywheelMotor.coast();
+      pusherMotor.coast();
       break;
     }
   }
-  servoESC.write(ESCPos);
-  plungerPWMSet(plungerPWM);
-
   triggerFireOld = triggerFire;
   delay(LOOP_TIME);
 }
