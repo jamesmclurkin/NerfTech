@@ -13,6 +13,7 @@
 #include <Tachometer.h>
 #include <BreakBeam.h>
 #include <MotorDriver.h>
+#include <BlasterDisplay.h>
 
 #if defined(ESP32)
 #include <analogWrite.h>

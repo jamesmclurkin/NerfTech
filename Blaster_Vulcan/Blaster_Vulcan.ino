@@ -6,34 +6,34 @@
 #include <NerfTech.h>
 
 // global variables for main system status
-#define HEARTBEAT_UPDATE_PERIOD         10
-#define HEARTBEAT_PRINT_PERIOD          250
-#define LED_UPDATE_PERIOD               20
+#define HEARTBEAT_UPDATE_PERIOD             10
+#define HEARTBEAT_PRINT_PERIOD              250
+#define LED_UPDATE_PERIOD                   20
 
 unsigned long heartbeatUpdateTime = 0;
 unsigned long heartbeatPrintTime = 0;
 unsigned long LEDUpdateTime = 0;
 
 // pin assignments
-#define PIN_PLUNGER_PWM             12
-#define PIN_PLUNGER_BACK_SW         10
+#define PIN_TRIGGER_MODE_SW                 9
+#define PIN_TRIGGER_SW                      7
 
-#define PIN_TRIGGER_MODE_SW         9
-#define PIN_TRIGGER_SW              7
+#define PIN_PUSHER_PWM                      12
+#define PIN_PUSHER_BACK_SW                  10
 
-#define PIN_FLYWHEEL_ESC            5
-#define PIN_BREAKBEAM               1
-#define PIN_FLYWHEEL_TACHOMETER     0
+#define PIN_FLYWHEEL_ESC                    5
+#define PIN_BREAKBEAM                       1
+#define PIN_FLYWHEEL_TACHOMETER             0
 
-#define PIN_SAFETY_JAMDOOR_SW       3
+#define PIN_SAFETY_JAMDOOR_SW               3
 
-#define PIN_MOTOR_TEMP              (A2)
+#define PIN_MOTOR_TEMP                      (A2)
 
 // flywheel motor constants
-#define FLYWHEEL_MOTOR_SPEED_NEUTRAL          0
-#define FLYWHEEL_MOTOR_SPEED_REV              100
-#define FLYWHEEL_MOTOR_SPEED_REV_HOLD         75
-#define FLYWHEEL_MOTOR_STRENGTH_BRAKE         100
+#define FLYWHEEL_MOTOR_SPEED_NEUTRAL        0
+#define FLYWHEEL_MOTOR_SPEED_REV            100
+#define FLYWHEEL_MOTOR_SPEED_REV_HOLD       75
+#define FLYWHEEL_MOTOR_STRENGTH_BRAKE       100
 
 #define FLYWHEEL_STATE_STARTUP_DELAY        0
 #define FLYWHEEL_STATE_NEUTRAL              1
@@ -77,7 +77,7 @@ BreakBeam breakbeam(PIN_BREAKBEAM);
 
 MotorDriver flywheelMotor(MOTOR_TYPE_BRUSHED_ESC, PIN_FLYWHEEL_ESC);
 
-MotorDriver pusherMotor(MOTOR_TYPE_LOWSIDE_DRIVER, PIN_PLUNGER_PWM);
+MotorDriver pusherMotor(MOTOR_TYPE_LOWSIDE_DRIVER, PIN_PUSHER_PWM);
 
 
 // custom code for hte Vulcan blaster
