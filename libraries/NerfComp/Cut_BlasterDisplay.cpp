@@ -338,78 +338,6 @@ void displayScreenDiag() {
   }
 
 
-#define POSX_SEVEN_SEG_DIGIT_0  66
-#define POSX_SEVEN_SEG_DIGIT_1  98
-#define POSY_SEVEN_SEG_DIGIT  12
-
-void displayScreenHUD() {
-  switch (buttonEventGet()) {
-  case BUTTON_EVENT_SHORT_SELECT: {
-    //advance to config screen
-    UIMode = UI_SCREEN_MENU;
-    break;
-    }
-  }
-
-  // Draw the HUD Display
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.setTextSize(2);
-  display.println(F("Rapid"));
-  display.setTextSize(1);
-  display.print(F("Mag:"));
-  //displayPrint_P(magazineTypes[magazineTypeIdx].name); display.println(F(""));
-  displayPrint_P(magazineTypesGetName(magazineTypeIdx)); display.println(F(""));
-  display.print(F("Rd/m:"));
-  if (roundsPerMin > 0) {
-    display.println(roundsPerMin, DEC);
-  } else {
-    display.println(F("---"));
-  }
-  display.print(F("Ft/s:"));
-  if (velocity >= 0.0) {
-    display.println(velocity, 1);
-  } else {
-    display.println(F("---"));
-  }
-  display.print(F("Volt:"));
-  display.println(voltageBatteryAvg, 1);
-
-  display.print(F("JamCount:"));
-  display.println(roundsJamCount, DEC);
-
-  // draw the round digits.
-  int digit0 = SEVEN_SEGMENT_BITMAP_DASH;
-  int digit1 = SEVEN_SEGMENT_BITMAP_DASH;
-  if ((roundCount >= 0) && (roundCount <= 99)) {
-    digit0 = roundCount / 10;
-    digit1 = roundCount % 10;
-  }
-  display.setCursor(86, 0);
-  display.println(F("Rounds:"));
-  display.drawBitmap(POSX_SEVEN_SEG_DIGIT_0, POSY_SEVEN_SEG_DIGIT,
-      (uint8_t *) &(SevenSegmentBitMaps[digit0]),
-      SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
-  display.drawBitmap(POSX_SEVEN_SEG_DIGIT_1, POSY_SEVEN_SEG_DIGIT,
-      (uint8_t *) &(SevenSegmentBitMaps[digit1]),
-      SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
-
-  // draw the jam door indicator or the feed jam indicator
-  if (jamDoorOpen || feedJam) {
-    //fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color),
-    display.fillRoundRect(12, 20, 102, 23, 3, WHITE),
-    display.drawRoundRect(12, 20, 102, 23, 3, BLACK),
-    display.setTextSize(2);
-    display.setCursor(16, 24);
-    display.setTextColor(BLACK, WHITE); // 'inverted' text
-    if (jamDoorOpen) {
-      display.print(F("Jam:Door"));
-    } else if (feedJam) {
-      display.print(F("Jam:Feed"));
-    }
-  }
-}
 
 boolean updateEnable = true;
 boolean updateForce = false;
@@ -449,9 +377,6 @@ void displayUpdate() {
     display.display();
     updateForce = false;
   }
-}
-
-void displayInit() {
 }
 
 uint8_t displayGetButtonBits(void) {

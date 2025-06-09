@@ -34,9 +34,10 @@ public:
    *
    */
 
-  BlasterDisplay(int pin);
+  BlasterDisplay(void);
 
   void update(unsigned long currentTime);
+  void displayScreenHUD(unsigned long currentTime);
 
 };
 

@@ -57,7 +57,7 @@ MotorDriver flywheelMotor(MOTOR_TYPE_BRUSHED_ESC, PIN_FLYWHEEL_ESC);
 
 MotorDriver pusherMotor(MOTOR_TYPE_LOWSIDE_DRIVER, PIN_PUSHER_PWM);
 
-BlasterDisplay displayVariable(5);
+BlasterDisplay display;
 
 void setup() {
   // Setup the pins for internal sensing
@@ -105,7 +105,7 @@ void loop() {
 
   tach.update(currentTime);
   breakbeam.update(currentTime);
-  displayVariable.update(currentTime);
+  display.update(currentTime);
 
   // print dart stats if there is a new dart
   float dartSpeed = breakbeam.getNewDartSpeedFPS();
