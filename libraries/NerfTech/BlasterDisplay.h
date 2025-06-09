@@ -5,8 +5,6 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_MCP23008.h>
 
-#define OLED_RESET 4
-
 // void displayUpdate(void);
 // void displayInit(void);
 // void displayUpdateEnable(boolean val);
@@ -36,6 +34,7 @@ public:
 
   BlasterDisplay(void);
 
+  void begin(void);
   void update(unsigned long currentTime);
   void displayScreenHUD(unsigned long currentTime);
 

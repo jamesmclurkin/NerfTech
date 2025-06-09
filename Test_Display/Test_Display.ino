@@ -72,8 +72,10 @@ void setup() {
 
   // init the serial port for debugging output
   Serial.begin(115200);
-  Serial.println(F(" NerfComp: Vulcan Afterburner ver 0.1"));
+  Serial.println(" NerfComp: Vulcan Afterburner ver 0.1");
 
+  display.begin();
+  
   // reset the heartbeat time to avoid a bunch of initial updates
   heartbeatUpdateTime = millis();
   heartbeatPrintTime = heartbeatUpdateTime;
@@ -105,7 +107,7 @@ void loop() {
 
   tach.update(currentTime);
   breakbeam.update(currentTime);
-  display.update(currentTime);
+  //display.update(currentTime);
 
   // print dart stats if there is a new dart
   float dartSpeed = breakbeam.getNewDartSpeedFPS();

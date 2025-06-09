@@ -18,10 +18,17 @@
 #define SCREEN_UPDATE_TIME    50
 unsigned long updateTime;
 
+#define OLED_RESET -1
+
 BlasterDisplay::BlasterDisplay(void)
 {
-  this->display = Adafruit_SSD1306(OLED_RESET);
+  //this->display = Adafruit_SSD1306(OLED_RESET);
+  this->display = Adafruit_SSD1306(128, 64, &Wire, OLED_RESET, 400000, 10000);
   this->UIMode = UI_SCREEN_HUD;
+}
+
+void BlasterDisplay::begin(void)
+{
 
   // init the LED Display
   // generate the high voltage from the 3.3v line internally! (neat!)
