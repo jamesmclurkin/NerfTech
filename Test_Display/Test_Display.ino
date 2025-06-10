@@ -102,12 +102,14 @@ boolean plungerEndSwitchOld = false;
 int shotCounter = 0;
 int stopSlowITermPWM = 0;
 
+int rounds = 18;
+
 void loop() {
   long currentTime = millis();
 
   tach.update(currentTime);
   breakbeam.update(currentTime);
-  //display.update(currentTime);
+  display.update(currentTime, rounds);
 
   // print dart stats if there is a new dart
   float dartSpeed = breakbeam.getNewDartSpeedFPS();
@@ -150,6 +152,14 @@ void loop() {
   boolean triggerFire = switchTriggerFireRead();
   boolean triggerFireEdge = (triggerFire && !triggerFireOld);
 
+  if (triggerFireEdge) {
+    // advance the HUD screen
+    if (rounds > 0) {
+      rounds--;
+    }
+    display.updateAndRedraw(currentTime, rounds);
+  }
+  
   // update RGB LED
   if (currentTime > LEDUpdateTime) {
     if (triggerFire) {

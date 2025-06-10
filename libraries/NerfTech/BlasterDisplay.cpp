@@ -20,11 +20,21 @@ unsigned long updateTime;
 
 #define OLED_RESET -1
 
+// temp variables to dislpay until I figure out a "blaster status" class\
+// blaster status
+int roundsPerMin = 3;
+float velocity = 152.6;
+float voltageBatteryAvg = 11.8;
+int roundsJamCount = 0;
+int roundCount = 18;
+boolean jamDoorOpen = false;
+boolean feedJam = false;
+
 BlasterDisplay::BlasterDisplay(void)
 {
   //this->display = Adafruit_SSD1306(OLED_RESET);
-  this->display = Adafruit_SSD1306(128, 64, &Wire, OLED_RESET, 400000, 10000);
-  this->UIMode = UI_SCREEN_HUD;
+  display = Adafruit_SSD1306(128, 64, &Wire, OLED_RESET, 400000, 10000);
+  UIMode = UI_SCREEN_HUD;
 }
 
 void BlasterDisplay::begin(void)
@@ -32,12 +42,12 @@ void BlasterDisplay::begin(void)
 
   // init the LED Display
   // generate the high voltage from the 3.3v line internally! (neat!)
-  this->display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
   
   // Clear the display buffer and put up the splash screen
-  this->display.clearDisplay();
-  this->display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
-  this->display.display();
+  display.clearDisplay();
+  display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
+  display.display();
 
   // GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
   // for (int i = 0; i < 8; ++i) {
@@ -49,12 +59,19 @@ void BlasterDisplay::begin(void)
   updateTime = SPLASH_SCREEN_TIME;
 }
 
-void BlasterDisplay::update(unsigned long currentTime)
+void BlasterDisplay::update(unsigned long currentTime, int rounds)
 {
+  roundCount = rounds;
   if (currentTime > updateTime) {
     updateTime += SCREEN_UPDATE_TIME;
+    displayScreenHUD(currentTime, rounds);
   }
-  this->displayScreenHUD(currentTime);
+}
+
+void BlasterDisplay::updateAndRedraw(unsigned long currentTime, int rounds)
+{
+  roundCount = rounds;
+  displayScreenHUD(currentTime, rounds);
 }
 
 
@@ -62,16 +79,7 @@ void BlasterDisplay::update(unsigned long currentTime)
 #define POSX_SEVEN_SEG_DIGIT_1  98
 #define POSY_SEVEN_SEG_DIGIT  12
 
-// temp variables to dislpay until I figure out a "blaster status" class
-int roundsPerMin = 3;
-float velocity = 152.6;
-float voltageBatteryAvg = 11.8;
-int roundsJamCount = 0;
-int roundCount = 18;
-boolean jamDoorOpen = false;
-boolean feedJam = false;
-
-void BlasterDisplay::displayScreenHUD(unsigned long currentTime) {
+void BlasterDisplay::displayScreenHUD(unsigned long currentTime, int rounds) {
   // Draw the HUD Display
   display.clearDisplay();
   display.setTextColor(WHITE);
@@ -130,4 +138,5 @@ void BlasterDisplay::displayScreenHUD(unsigned long currentTime) {
       display.print("Jam:Feed");
     }
   }
+  display.display();
 }

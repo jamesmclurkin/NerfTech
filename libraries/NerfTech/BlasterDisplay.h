@@ -22,6 +22,7 @@ private:
   Adafruit_MCP23008 GPIO_UI;
 
   uint8_t UIMode;
+  void displayScreenHUD(unsigned long currentTime, int rounds);
 
 public:
   /** Creates a Blaster Display
@@ -35,8 +36,8 @@ public:
   BlasterDisplay(void);
 
   void begin(void);
-  void update(unsigned long currentTime);
-  void displayScreenHUD(unsigned long currentTime);
+  void update(unsigned long currentTime, int rounds);
+  void updateAndRedraw(unsigned long currentTime, int rounds);
 
 };
 
