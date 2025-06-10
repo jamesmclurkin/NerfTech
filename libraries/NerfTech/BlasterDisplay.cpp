@@ -7,6 +7,26 @@
 #include <BlasterDisplay_SevenSegmentLarge.h>
 #include <BlasterDisplay_NerfLogo.h>
 
+// #include <Fonts/DialogInput_plain_10.h>
+// #include <Fonts/DialogInput_bold_10.h>
+
+// #include <Fonts/Monospaced_plain_9.h>
+// #include <Fonts/Monospaced_bold_9.h>
+
+// #include <Fonts/Monospaced_plain_10.h>
+// #include <Fonts/Monospaced_bold_10.h>
+
+// #include <Fonts/Roboto_Light_9.h>
+// #include <Fonts/Roboto_Black_9.h>
+
+#include <Fonts/Roboto_Light_10.h>
+#include <Fonts/Roboto_Light_11.h>
+
+#include <Fonts/Roboto_Black_10.h>
+#include <Fonts/Roboto_Black_11.h>
+#include <Fonts/Roboto_Black_12.h>
+#include <Fonts/Roboto_Black_13.h>
+
 #define UI_SCREEN_HUD         0
 #define UI_SCREEN_MENU        1
 #define UI_SCREEN_CONFIG      2
@@ -14,7 +34,7 @@
 #define UI_SCREEN_TIMER       4
 #define UI_SCREEN_DIAGNOSTIC  5
 
-#define SPLASH_SCREEN_TIME    2000
+#define SPLASH_SCREEN_TIME    1000
 #define SCREEN_UPDATE_TIME    50
 unsigned long updateTime;
 
@@ -45,9 +65,9 @@ void BlasterDisplay::begin(void)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
   
   // Clear the display buffer and put up the splash screen
-  display.clearDisplay();
-  display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
-  display.display();
+  // display.clearDisplay();
+  // display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
+  // display.display();
 
   // GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
   // for (int i = 0; i < 8; ++i) {
@@ -83,30 +103,32 @@ void BlasterDisplay::displayScreenHUD(unsigned long currentTime, int rounds) {
   // Draw the HUD Display
   display.clearDisplay();
   display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.setTextSize(2);
-  display.println("Rapid");
-  display.setTextSize(1);
-  display.print("Mag:");
+  display.setCursor(0, 9);
+  display.setFont(&Roboto_Black_13);
+  display.println("Vulcan");
+  display.setCursor(0, 20);
+  display.setFont(&Roboto_Light_11);
+  display.print("mag:");
   //displayPrint_P(magazineTypes[magazineTypeIdx].name); display.println("");
   //displayPrint_P(magazineTypesGetName(magazineTypeIdx)); display.println("");
-  display.print("Rd/m:");
+  display.print("rd/m:");
   if (roundsPerMin > 0) {
     display.println(roundsPerMin, DEC);
   } else {
     display.println("---");
   }
-  display.print("Ft/s:");
+  display.print("ft/s:");
   if (velocity >= 0.0) {
     display.println(velocity, 1);
   } else {
     display.println("---");
   }
-  display.print("Volt:");
+  
+  display.print("volt:");
   display.println(voltageBatteryAvg, 1);
 
-  display.print("JamCount:");
-  display.println(roundsJamCount, DEC);
+  // display.print("JamCount:");
+  // display.println(roundsJamCount, DEC);
 
   // draw the round digits.
   int digit0 = SEVEN_SEGMENT_BITMAP_DASH;
@@ -115,8 +137,9 @@ void BlasterDisplay::displayScreenHUD(unsigned long currentTime, int rounds) {
     digit0 = roundCount / 10;
     digit1 = roundCount % 10;
   }
-  display.setCursor(86, 0);
-  display.println("Rounds:");
+  display.setCursor(89, 7);
+  display.print("rounds");
+  display.setCursor(90, 10);
   display.drawBitmap(POSX_SEVEN_SEG_DIGIT_0, POSY_SEVEN_SEG_DIGIT,
       (uint8_t *) &(SevenSegmentBitMaps[digit0]),
       SEVEN_SEGMENT_BITMAP_WIDTH, SEVEN_SEGMENT_BITMAP_HEIGHT, 1);
