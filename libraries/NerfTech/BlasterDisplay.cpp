@@ -38,7 +38,11 @@
 #define SCREEN_UPDATE_TIME    50
 unsigned long updateTime;
 
-#define OLED_RESET -1
+#define PIN_OLED_RESET -1
+#define I2C_CLOCK_SPEED_DEFAULT           400000
+#define I2C_CLOCK_SPEED_DISPLAY           400000
+#define DISPLAY_RES_HORIZONTAL            128
+#define DISPLAY_RES_VERTICAL              64
 
 // temp variables to dislpay until I figure out a "blaster status" class\
 // blaster status
@@ -52,8 +56,8 @@ boolean feedJam = false;
 
 BlasterDisplay::BlasterDisplay(void)
 {
-  //this->display = Adafruit_SSD1306(OLED_RESET);
-  display = Adafruit_SSD1306(128, 64, &Wire, OLED_RESET, 400000, 10000);
+  //display = Adafruit_SSD1306(DISPLAY_RES_HORIZONTAL, DISPLAY_RES_VERTICAL, &Wire, OLED_RESET, 400000, 100000);
+  display = Adafruit_SSD1306(DISPLAY_RES_HORIZONTAL, DISPLAY_RES_VERTICAL, &Wire, PIN_OLED_RESET, I2C_CLOCK_SPEED_DISPLAY, I2C_CLOCK_SPEED_DEFAULT);
   UIMode = UI_SCREEN_HUD;
 }
 
@@ -65,15 +69,9 @@ void BlasterDisplay::begin(void)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
   
   // Clear the display buffer and put up the splash screen
-  // display.clearDisplay();
-  // display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
-  // display.display();
-
-  // GPIO_UI.begin(1);       // GPIO foor the UI buttons is on address 1
-  // for (int i = 0; i < 8; ++i) {
-  //   GPIO_UI.pinMode(i, INPUT);
-  //   GPIO_UI.pullUp(i, HIGH);  // turn on a 100K pullup internally
-  // }
+  display.clearDisplay();
+  display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
+  display.display();
 
   //updateTime = millis() + SPLASH_SCREEN_TIME;
   updateTime = SPLASH_SCREEN_TIME;
@@ -93,6 +91,18 @@ void BlasterDisplay::updateAndRedraw(unsigned long currentTime, int rounds)
   roundCount = rounds;
   displayScreenHUD(currentTime, rounds);
 }
+
+void BlasterDisplay::displayBit(uint8_t bit) {
+  if (bit) {
+    display.setTextColor(BLACK, WHITE); // 'inverted' text
+    display.print("1");
+    display.setTextColor(WHITE);
+  } else {
+    display.setTextColor(WHITE);
+    display.print("0");
+  }
+}
+
 
 
 #define POSX_SEVEN_SEG_DIGIT_0  66

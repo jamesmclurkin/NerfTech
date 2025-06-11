@@ -57,6 +57,8 @@ MotorDriver flywheelMotor(MOTOR_TYPE_BRUSHED_ESC, PIN_FLYWHEEL_ESC);
 
 MotorDriver pusherMotor(MOTOR_TYPE_LOWSIDE_DRIVER, PIN_PUSHER_PWM);
 
+BlasterDisplayButtons displayButtons;
+
 BlasterDisplay display;
 
 void setup() {
@@ -74,6 +76,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println(" NerfComp: Vulcan Afterburner ver 0.1");
 
+  displayButtons.begin();
   display.begin();
   
   // reset the heartbeat time to avoid a bunch of initial updates
@@ -109,6 +112,7 @@ void loop() {
 
   tach.update(currentTime);
   breakbeam.update(currentTime);
+  displayButtons.update(currentTime);
   display.update(currentTime, rounds);
 
   // print dart stats if there is a new dart
@@ -136,8 +140,13 @@ void loop() {
       //Serial.print("hb ");
       //Serial.print("tach counts:");
       //Serial.print(tachCountPeriod, DEC);
-      Serial.print(" RPM:");
-      Serial.print(tach.rpm(), DEC);
+      // Serial.print(" RPM:");
+      // Serial.print(tach.rpm(), DEC);
+
+      Serial.print(" buttons:");
+      //Serial.print(displayButtons.getButtonBits(), BIN);
+      displayButtons.printButtonBits();
+      
 
       Serial.println("");
     }
@@ -169,7 +178,7 @@ void loop() {
         dotStar.setPixelColor(0, 0x00FF00);    
       } else {
         // #FFFF00
-        dotStar.setPixelColor(0, 0xFFFF00);    
+        dotStar.setPixelColor(0, 0xFFFFFF);    
       }
     } else {
       if (tach.rpm() > PUSHER_MIN_RPM) {

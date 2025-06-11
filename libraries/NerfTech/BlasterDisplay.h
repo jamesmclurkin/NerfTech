@@ -19,10 +19,10 @@ class BlasterDisplay
 {
 private:
   Adafruit_SSD1306 display;
-  Adafruit_MCP23008 GPIO_UI;
 
   uint8_t UIMode;
   void displayScreenHUD(unsigned long currentTime, int rounds);
+  void displayBit(uint8_t bit);
 
 public:
   /** Creates a Blaster Display

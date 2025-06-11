@@ -3,11 +3,6 @@
 
 #include <NerfTech.h>
 
-///////// bitmapped graphics ////////
-#include <BlasterDisplay_SevenSegmentLarge.h>
-#include <BlasterDisplay_NerfLogo.h>
-
-
 #define MENU_ITEM_NAME_SIZE 12
 
 typedef struct MenuItem {
@@ -84,17 +79,6 @@ void buttonUpdateEvents(void) {
 
 
 //////// Display ////////
-
-void printBit(uint8_t bit) {
-  if (bit) {
-    display.setTextColor(BLACK, WHITE); // 'inverted' text
-    display.print(F("1"));
-    display.setTextColor(WHITE);
-  } else {
-    display.setTextColor(WHITE);
-    display.print(F("0"));
-  }
-}
 
 //void displayPrint_F(Adafruit_SSD1306 d, const char * str) {
 void displayPrint_P(const char * str) {
@@ -379,6 +363,3 @@ void displayUpdate() {
   }
 }
 
-uint8_t displayGetButtonBits(void) {
-  return GPIO_UI.readGPIO();  
-}

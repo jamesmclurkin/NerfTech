@@ -14,6 +14,7 @@
 #include <BreakBeam.h>
 #include <MotorDriver.h>
 #include <BlasterDisplay.h>
+#include <BlasterDisplayButtons.h>
 
 #if defined(ESP32)
 #include <analogWrite.h>
