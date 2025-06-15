@@ -51,7 +51,7 @@
 // Or use this line for a breakout or shield with an I2C connection:
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 
-#define PIN_BUTTON       12
+#define PIN_BUTTON       3
 boolean buttonRead() {return !digitalRead(PIN_BUTTON); }
 
 void setup(void) {
