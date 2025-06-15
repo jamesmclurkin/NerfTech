@@ -34,7 +34,7 @@
 #define UI_SCREEN_TIMER       4
 #define UI_SCREEN_DIAGNOSTIC  5
 
-#define SPLASH_SCREEN_TIME    1000
+#define SPLASH_SCREEN_TIME    2000
 #define SCREEN_UPDATE_TIME    50
 unsigned long updateTime;
 
@@ -67,14 +67,13 @@ void BlasterDisplay::begin(void)
   // init the LED Display
   // generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
-  
+
   // Clear the display buffer and put up the splash screen
   display.clearDisplay();
   display.drawBitmap(0, 0, NerfLogoBitmap, NERF_LOGO_BITMAP_WIDTH, NERF_LOGO_BITMAP_HEIGHT, 1);
   display.display();
 
-  //updateTime = millis() + SPLASH_SCREEN_TIME;
-  updateTime = SPLASH_SCREEN_TIME;
+  updateTime = millis() + SPLASH_SCREEN_TIME;
 }
 
 void BlasterDisplay::update(unsigned long currentTime, int rounds)

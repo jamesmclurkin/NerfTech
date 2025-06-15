@@ -72,13 +72,14 @@ void setup() {
   dotStar.setBrightness(80);
   dotStar.show();  // Turn all LEDs off ASAP
 
+  Serial.begin(115200);  // start the serial port here
+  delay(1000);  // give the Arduino IDE time to re-connect
+  display.begin();
+  displayButtons.begin();
+
   // init the serial port for debugging output
-  Serial.begin(115200);
   Serial.println(" NerfComp: Vulcan Afterburner ver 0.1");
 
-  displayButtons.begin();
-  display.begin();
-  
   // reset the heartbeat time to avoid a bunch of initial updates
   heartbeatUpdateTime = millis();
   heartbeatPrintTime = heartbeatUpdateTime;
@@ -211,13 +212,13 @@ void loop() {
   }
 
 
-  if (triggerFire) {
-    flywheelMotor.forward(FLYWHEEL_MOTOR_SPEED_REV);
-    pusherMotor.forward(PUSHER_SPEED_RUN);
-  } else {
-    flywheelMotor.coast();
-    pusherMotor.coast();
-  }
+  // if (triggerFire) {
+  //   flywheelMotor.forward(FLYWHEEL_MOTOR_SPEED_REV);
+  //   pusherMotor.forward(PUSHER_SPEED_RUN);
+  // } else {
+  //   flywheelMotor.coast();
+  //   pusherMotor.coast();
+  // }
 
   triggerFireOld = triggerFire;
   delay(LOOP_TIME);
